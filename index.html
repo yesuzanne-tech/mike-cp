@@ -255,7 +255,7 @@ function loadState() {
 }
 /* ---------- Synchronisation sur un serveur (Supabase) ----------
    Renseigner url et key (voir README.md). Tant qu'ils sont vides, l'appli marche seule, sans serveur. */
-var SYNC = { url: "", key: "", id: "mike", poll: 10000 };
+var SYNC = { url: "https://ccpsrzpxufxkhmdlojnq.supabase.co", key: "sb_publishable__Yuhi0-7CLwKbS90eQYSXw_YsvnHZsn", id: "mike", poll: 10000 };
 var syncOn = !!(SYNC.url && SYNC.key && SYNC.id);
 var syncTimer = null, ecranHome = false;
 var LIBELLES = { off: "Synchronisation non configurée", att: "Synchronisation…", ok: "Synchronisé", hors: "Hors ligne : envoi dès que le réseau revient" };
