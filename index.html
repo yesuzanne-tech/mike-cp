@@ -72,7 +72,7 @@ p { margin: 0 0 12px 0; }
 </style>
 </head>
 <body>
-<div class="bandeau"><div class="bandeau-in"><h1 class="titre">Mission CP · Mike</h1><button class="petit-bouton" id="b-home" type="button">Accueil</button></div></div>
+<div class="bandeau"><div class="bandeau-in"><h1 class="titre">Mission CP · Mike</h1><span><button class="petit-bouton" id="b-maj" type="button" aria-label="Actualiser" title="Actualiser" style="padding:6px 10px;vertical-align:middle"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><polyline points="20 3 20 8 15 8"/></svg></button> <button class="petit-bouton" id="b-home" type="button">Accueil</button></span></div></div>
 <main id="app"></main>
 <div class="pied" id="version"></div>
 
@@ -297,8 +297,9 @@ function adopte(d) {
   try { window.localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {}
   if (ecranHome) { showHome(); }
 }
-function tirer() {
-  if (!syncOn) { return; }
+function tirer(fin) {
+  var f = function () { if (typeof fin === "function") { fin(); } };
+  if (!syncOn) { f(); return; }
   try {
     fetch(SYNC.url + "/rest/v1/mike_state?id=eq." + encodeURIComponent(SYNC.id) + "&select=data", { headers: entetesSb({}) })
       .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
@@ -307,9 +308,10 @@ function tirer() {
         if (d && d.history && (d.maj || 0) > (state.maj || 0)) { adopte(d); majEtat("ok"); }
         else if (!d || (state.maj || 0) > ((d && d.maj) || 0)) { pousser(); }
         else { majEtat("ok"); }
+        f();
       })
-      .catch(function () { majEtat("hors"); });
-  } catch (e) { majEtat("hors"); }
+      .catch(function () { majEtat("hors"); f(); });
+  } catch (e) { majEtat("hors"); f(); }
 }
 function demarreSync() {
   if (!syncOn) { majEtat("off"); return; }
@@ -470,6 +472,13 @@ function construitExo(l, e) {
 
 /* ---------- Accueil ---------- */
 document.getElementById("b-home").addEventListener("click", function () { stopVoix(); showHome(); });
+document.getElementById("b-maj").addEventListener("click", function () {
+  stopVoix();
+  var fait = false;
+  function recharge() { if (fait) { return; } fait = true; window.location.href = window.location.pathname + "?maj=" + new Date().getTime(); }
+  window.setTimeout(recharge, 4000);
+  if (syncOn) { if (syncTimer) { clearTimeout(syncTimer); syncTimer = null; pousser(); } tirer(function () { window.setTimeout(recharge, 700); }); } else { recharge(); }
+});
 
 function showHome() {
   var h = '<div class="carte"><h2>Salut Mike ! 👋</h2><p>Nous sommes ' + dateLongue() + '. Choisis ce que tu veux faire.</p></div>';
