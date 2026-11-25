@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mission CP · Mike</title>
+<style>
+/* Mission CP : une page, un seul écran à la fois, gros boutons pour iPad. Texte très lisible, lecture à voix haute. */
+:root {
+  --ciel: #e9f5ff;
+  --bleu: #2f6fd6;
+  --bleu-fonce: #1d4a99;
+  --orange: #ff9f43;
+  --encre: #1b2a3d;
+  --papier: #ffffff;
+  --or: #ffd23f;
+  --juste: #2e8b3d;
+  --faux: #c0392b;
+  --police: "Trebuchet MS", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--ciel); color: var(--encre); font-family: var(--police); font-size: 22px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+.bandeau { background: linear-gradient(to right, #2f6fd6, #34b3e6); border-bottom: 8px solid var(--orange); color: #fff; padding: 14px 20px; }
+.bandeau-in { max-width: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+.titre { font-size: 28px; font-weight: bold; margin: 0; }
+main { max-width: 760px; margin: 0 auto; padding: 20px 16px 48px 16px; }
+.carte { background: var(--papier); border: 3px solid var(--orange); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+.carte.express { background: #fff6e5; border-color: #f08a1c; }
+.carte.quiz { background: #eaf3ff; border-color: var(--bleu); }
+h2 { font-size: 27px; margin: 0 0 8px 0; }
+p { margin: 0 0 12px 0; }
+.bouton { display: block; width: 100%; font-family: var(--police); font-size: 25px; font-weight: bold; padding: 18px; margin: 12px 0 0 0; border-radius: 10px; cursor: pointer; border: 3px solid var(--bleu-fonce); background: var(--bleu); color: #fff; text-align: center; -webkit-appearance: none; appearance: none; }
+.bouton.second { background: #fff; color: var(--bleu-fonce); }
+.bouton.orange { background: #f08a1c; border-color: #b8650a; }
+.bouton:focus, .option:focus, .petit-bouton:focus { outline: 4px solid var(--or); outline-offset: 2px; }
+.option { display: block; width: 100%; text-align: left; font-family: var(--police); font-size: 26px; padding: 18px; margin: 12px 0 0 0; border-radius: 10px; cursor: pointer; border: 3px solid var(--orange); background: #fffaf2; color: var(--encre); -webkit-appearance: none; appearance: none; }
+.option.juste { background: #d8f0da; border-color: var(--juste); }
+.option.faux { background: #f8dcd8; border-color: var(--faux); }
+.option[disabled] { opacity: 1; cursor: default; }
+.option.pris { background: #e3ecff; border-color: var(--bleu); color: #7a8aa5; }
+.grand-emoji { font-size: 64px; line-height: 1.2; text-align: center; margin: 4px 0 8px 0; }
+.question { font-size: 29px; font-weight: bold; line-height: 1.4; margin: 6px 0 4px 0; }
+.suivi { font-size: 18px; color: #4a5d78; margin-bottom: 6px; }
+.retour { margin-top: 14px; padding: 14px; border-radius: 10px; font-size: 23px; }
+.retour.ok { background: #d8f0da; border: 3px solid var(--juste); }
+.retour.ko { background: #f8dcd8; border: 3px solid var(--faux); }
+.etoiles { font-size: 52px; color: var(--or); letter-spacing: 6px; text-align: center; }
+.note { font-size: 62px; font-weight: bold; color: var(--bleu-fonce); line-height: 1.1; text-align: center; margin: 4px 0 8px 0; }
+.petit { font-size: 18px; color: #4a5d78; }
+.pastille { display: inline-block; font-size: 17px; font-weight: bold; padding: 2px 12px; border-radius: 14px; background: var(--or); color: var(--encre); }
+.barre { height: 16px; background: #dfe9f5; border-radius: 8px; overflow: hidden; margin-top: 4px; }
+.barre i { display: block; height: 100%; background: var(--bleu); }
+.petit-bouton { font-family: var(--police); font-size: 18px; font-weight: bold; padding: 8px 14px; border-radius: 8px; border: 3px solid #fff; background: transparent; color: #fff; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.lecon-txt { font-size: 25px; line-height: 1.7; background: #f4f9ff; border-left: 8px solid var(--bleu); padding: 14px 16px; border-radius: 6px; margin: 10px 0 0 0; }
+.lecon-txt ul { margin: 0; padding-left: 26px; }
+.lecon-txt li { margin: 8px 0; }
+.lire { background: #f6f6f6; border-left-color: #a0a8b5; font-size: 21px; }
+.rang { margin: 14px 0; }
+.reponse-ordre { min-height: 70px; background: #f4f9ff; border: 3px dashed var(--bleu); border-radius: 10px; padding: 8px 12px; font-size: 22px; margin-top: 10px; }
+.reponse-ordre div { margin: 4px 0; }
+.bilan { width: 100%; font-family: "Courier New", monospace; font-size: 15px; min-height: 260px; padding: 12px; border: 3px solid var(--orange); border-radius: 8px; }
+.pied { text-align: center; font-size: 13px; color: #6b7d96; padding: 8px 0 24px 0; }
+.duo { display: flex; gap: 10px; }
+.duo .bouton { flex: 1; }
+.ecoute { display: inline-block; font-family: var(--police); font-size: 22px; font-weight: bold; padding: 10px 16px; margin: 6px 0; border-radius: 10px; border: 3px solid var(--bleu-fonce); background: #fff; color: var(--bleu-fonce); cursor: pointer; -webkit-appearance: none; appearance: none; }
+</style>
+</head>
+<body>
+<div class="bandeau"><div class="bandeau-in"><h1 class="titre">Mission CP · Mike</h1><button class="petit-bouton" id="b-home" type="button">Accueil</button></div></div>
+<main id="app"></main>
+<div class="pied" id="version"></div>
+
+<script>
+/* =====================================================================
+   Mission CP - page d'entraînement de Mike (CP, Mme Rainaud)
+   Structure : Matière > Leçons > Exercices (questions).
+   Une question de type QCM :  Q("question", ["a","b","c"], indiceBonneReponse, "explication", "emoji", fixe)
+   Une question « dans l'ordre » : OR("consigne", ["premier","deuxième",...], "explication", "emoji")
+   ===================================================================== */
+var VERSION = "V1 · leçons H1 et H2 · 25 novembre 2026";
+var STORE = "mission_mike_cp_v1";
+var VF = ["Vrai", "Faux"];
+var COUL = ["🟢 Vert : avant midi", "🟡 Jaune : à midi", "🟠 Orange : après midi"];
+
+function Q(q, o, a, why, e, fixe) { return { t: "qcm", q: q, o: o, a: a, why: why, e: e || "", fixe: !!fixe }; }
+function OR(q, items, why, e) { return { t: "ordre", q: q, items: items, why: why, e: e || "" }; }
+
+/* ---------- Leçon H1 : Le jour ---------- */
+var H1 = {
+  id: "h1", titre: "H1 · Le jour", emoji: "🌞", poids: 1,
+  visuel: "🌅 ☀️ 🌇 🌙",
+  retenir: [
+    "Un jour dure 24 heures.",
+    "Un jour se compose d'une journée et d'une nuit.",
+    "La journée : le soleil éclaire, du lever du soleil jusqu'à son coucher.",
+    "La nuit : le soleil est caché, du coucher du soleil jusqu'à son lever.",
+    "Quand le soleil se lève le matin, c'est l'aube.",
+    "Quand le soleil se couche le soir, c'est le crépuscule."
+  ],
+  lire: [
+    "Midi est le milieu de la journée, entre le matin et l'après-midi.",
+    "À midi, le soleil est très haut dans le ciel : on dit qu'il est au zénith.",
+    "En été, les journées sont plus longues que les nuits. En hiver, c'est l'inverse."
+  ],
+  exos: [
+    { titre: "Le jour et la nuit", qs: [
+      Q("Combien d'heures dure un jour ?", ["24 heures", "12 heures", "10 heures"], 0, "Un jour dure 24 heures.", "⏰"),
+      Q("Un jour se compose de…", ["une journée et une nuit", "un matin et un soir", "une semaine et un mois"], 0, "Un jour = une journée + une nuit.", "🌞🌙"),
+      Q("Quand le soleil éclaire, c'est…", ["la journée", "la nuit", "l'aube"], 0, "Quand le soleil éclaire, c'est la journée.", "☀️"),
+      Q("Quand le soleil est caché, c'est…", ["la nuit", "la journée", "le crépuscule"], 0, "Quand le soleil est caché, c'est la nuit.", "🌙"),
+      Q("La journée va…", ["du lever du soleil jusqu'à son coucher", "du coucher du soleil jusqu'à son lever", "de midi jusqu'à minuit"], 0, "La journée va du lever du soleil jusqu'à son coucher.", "☀️"),
+      Q("La nuit va…", ["du coucher du soleil jusqu'à son lever", "du lever du soleil jusqu'à son coucher", "de midi jusqu'à 14 heures"], 0, "La nuit va du coucher du soleil jusqu'à son lever.", "🌙")
+    ] },
+    { titre: "Regarde l'image", qs: [
+      Q("Je vois le soleil, la maison et le chien. C'est…", ["la journée", "la nuit"], 0, "Le soleil éclaire : c'est la journée.", "☀️🏡🐕", true),
+      Q("Je vois la lune, les étoiles et la chouette. C'est…", ["la nuit", "la journée"], 0, "Le soleil est caché : c'est la nuit.", "🌙⭐🦉", true),
+      Q("Je vois le soleil dans le ciel. Est-ce la journée ?", ["Oui, c'est la journée", "Non, c'est la nuit"], 0, "Le soleil éclaire, donc c'est la journée.", "🌤️", true),
+      Q("Je vois des chauves-souris et la lune. Est-ce la nuit ?", ["Oui, c'est la nuit", "Non, c'est la journée"], 0, "Le soleil est caché, donc c'est la nuit.", "🦇🌙", true)
+    ] },
+    { titre: "Aube et crépuscule", qs: [
+      Q("Quand le soleil se lève le matin, on dit que c'est…", ["l'aube", "le crépuscule", "la nuit"], 0, "Le soleil se lève le matin : c'est l'aube.", "🌅"),
+      Q("Quand le soleil se couche le soir, on dit que c'est…", ["le crépuscule", "l'aube", "la journée"], 0, "Le soleil se couche le soir : c'est le crépuscule.", "🌇"),
+      Q("L'aube, c'est quand…", ["le soleil se lève", "le soleil se couche", "le soleil est caché"], 0, "L'aube, c'est le lever du soleil.", "🌅"),
+      Q("Le crépuscule, c'est quand…", ["le soleil se couche", "le soleil se lève", "le soleil est très haut"], 0, "Le crépuscule, c'est le coucher du soleil.", "🌇"),
+      OR("Remets dans l'ordre, comme dans la vie du soleil.", ["🌅 l'aube", "☀️ midi", "🌇 le crépuscule", "🌙 la nuit"], "D'abord l'aube, puis midi, puis le crépuscule, puis la nuit.", "🌅")
+    ] },
+    { titre: "Vrai ou faux", qs: [
+      Q("Un jour dure 12 heures.", VF, 1, "Faux : un jour dure 24 heures.", "⏰"),
+      Q("La nuit, le soleil est caché.", VF, 0, "Vrai : quand le soleil est caché, c'est la nuit.", "🌙"),
+      Q("L'aube, c'est quand le soleil se couche.", VF, 1, "Faux : l'aube, c'est quand le soleil se lève.", "🌅"),
+      Q("Le crépuscule, c'est le soir.", VF, 0, "Vrai : le soleil se couche le soir.", "🌇"),
+      Q("Un jour se compose d'une journée et d'une nuit.", VF, 0, "Vrai !", "🌞🌙")
+    ] }
+  ]
+};
+
+/* ---------- Leçon H2 : La journée ---------- */
+var H2 = {
+  id: "h2", titre: "H2 · La journée", emoji: "🏫", poids: 1,
+  visuel: "🛏️ 🥣 🏫 🍽️ 🏠 🥘 😴",
+  retenir: [
+    "🟢 Avant midi (le matin) : je me réveille, je me lève, je prends mon petit-déjeuner, je vais à l'école.",
+    "🟡 À midi : je déjeune.",
+    "🟠 Après midi : je rentre à la maison, je dîne, je me couche et je m'endors.",
+    "Les repas : le petit-déjeuner le matin, le déjeuner à midi, le dîner le soir."
+  ],
+  lire: [
+    "Les moments de la journée : le matin, le midi, l'après-midi, la soirée, puis la nuit.",
+    "Le cahier de Mike : la roue « Ma journée » avec les cinq moments."
+  ],
+  exos: [
+    { titre: "Les repas", qs: [
+      Q("Quel repas je prends le matin ?", ["le petit-déjeuner", "le déjeuner", "le dîner"], 0, "Le matin, je prends mon petit-déjeuner.", "🥣"),
+      Q("Quel repas je prends à midi ?", ["le déjeuner", "le dîner", "le petit-déjeuner"], 0, "À midi, je déjeune.", "🍽️"),
+      Q("Quel repas je prends le soir ?", ["le dîner", "le déjeuner", "le petit-déjeuner"], 0, "Le soir, je dîne.", "🥘"),
+      Q("Je prends mon petit-déjeuner. C'est…", ["le matin", "le soir", "la nuit"], 0, "Le petit-déjeuner, c'est le premier repas, le matin.", "🥣"),
+      Q("Je dîne. C'est…", ["le soir", "le matin", "à midi"], 0, "Je dîne le soir.", "🥘"),
+      Q("Je déjeune le matin.", VF, 1, "Faux : je déjeune à midi.", "🍽️")
+    ] },
+    { titre: "Que fais-je ?", qs: [
+      Q("Le matin, qu'est-ce que je fais ?", ["Je me lève", "Je dors", "Je dîne"], 0, "Le matin, je me réveille et je me lève.", "🛏️"),
+      Q("Je dors. C'est…", ["la nuit", "le matin", "à midi"], 0, "Je dors la nuit.", "😴"),
+      Q("Je vais à l'école. C'est…", ["le matin", "la nuit", "le soir"], 0, "Je vais à l'école le matin, avant midi.", "🏫"),
+      Q("Je rentre à la maison. C'est avant midi ou après midi ?", ["après midi", "avant midi"], 0, "Je rentre à la maison après midi.", "🏠", true),
+      Q("Quelle phrase va avec le matin ?", ["Je me lève.", "Je me couche.", "Je dîne."], 0, "Le matin, je me lève.", "🌅"),
+      Q("Quelle phrase va avec la nuit ?", ["Je dors.", "Je vais à l'école.", "Je prends mon petit-déjeuner."], 0, "La nuit, je dors.", "🌙")
+    ] },
+    { titre: "Les couleurs des bulles", qs: [
+      Q("Je me réveille, je me lève. Quelle couleur ?", COUL, 0, "Je me lève avant midi : vert.", "🛏️", true),
+      Q("Je prends mon petit-déjeuner. Quelle couleur ?", COUL, 0, "Le petit-déjeuner, c'est avant midi : vert.", "🥣", true),
+      Q("Je vais à l'école. Quelle couleur ?", COUL, 0, "Je vais à l'école avant midi : vert.", "🏫", true),
+      Q("Je déjeune. Quelle couleur ?", COUL, 1, "Je déjeune à midi : jaune.", "🍽️", true),
+      Q("Je rentre à la maison. Quelle couleur ?", COUL, 2, "Je rentre après midi : orange.", "🏠", true),
+      Q("Je dîne. Quelle couleur ?", COUL, 2, "Je dîne après midi : orange.", "🥘", true),
+      Q("Je me couche, je m'endors. Quelle couleur ?", COUL, 2, "Je me couche après midi : orange.", "😴", true)
+    ] },
+    { titre: "Dans l'ordre", qs: [
+      OR("Remets les moments dans l'ordre.", ["le matin", "le midi", "l'après-midi", "la soirée"], "D'abord le matin, puis le midi, puis l'après-midi, puis la soirée.", "🔄"),
+      OR("Remets ma journée dans l'ordre.", ["🛏️ Je me lève", "🥣 Je prends mon petit-déjeuner", "🏫 Je vais à l'école", "🍽️ Je déjeune", "🏠 Je rentre à la maison", "🥘 Je dîne", "😴 Je me couche"], "Je me lève, je prends mon petit-déjeuner, je vais à l'école, je déjeune, je rentre, je dîne, je me couche.", "📅"),
+      OR("Remets dans l'ordre.", ["🛏️ Je me lève", "🍽️ Je déjeune", "🏠 Je rentre à la maison", "😴 Je dors"], "Je me lève, je déjeune, je rentre, je dors.", "📅")
+    ] }
+  ]
+};
+
+/* ---------- Révisions de niveau CP (utilisées par le quiz du jour, pas affichées comme leçons) ---------- */
+var REV_FR = { id: "rev-fr", titre: "Révisions CP : français", poids: 1, exos: [ { titre: "Français CP", qs: [
+  Q("Combien de syllabes entends-tu dans « banane » ?", ["3", "2", "4"], 0, "Ba-na-ne : 3 syllabes.", "🍌"),
+  Q("Combien de syllabes entends-tu dans « chapeau » ?", ["2", "3", "1"], 0, "Cha-peau : 2 syllabes.", "🎩"),
+  Q("Combien de syllabes entends-tu dans « papillon » ?", ["3", "2", "4"], 0, "Pa-pil-lon : 3 syllabes.", "🦋"),
+  Q("Combien de syllabes entends-tu dans « chat » ?", ["1", "2", "3"], 0, "Chat : une seule syllabe.", "🐱"),
+  Q("Combien de syllabes entends-tu dans « vélo » ?", ["2", "1", "3"], 0, "Vé-lo : 2 syllabes.", "🚲"),
+  Q("Par quelle lettre commence « lune » ?", ["l", "m", "n"], 0, "Lune commence par la lettre l.", "🌙"),
+  Q("Par quelle lettre commence « pomme » ?", ["p", "b", "d"], 0, "Pomme commence par la lettre p.", "🍎"),
+  Q("Par quelle lettre commence « soleil » ?", ["s", "z", "c"], 0, "Soleil commence par la lettre s.", "☀️"),
+  Q("Quelle lettre est une voyelle ?", ["a", "b", "c"], 0, "Les voyelles sont a, e, i, o, u, y.", "🔤"),
+  Q("Quelle lettre est une voyelle ?", ["t", "o", "l"], 1, "Le o est une voyelle.", "🔤"),
+  Q("Une phrase commence par…", ["une majuscule", "une virgule", "un chiffre"], 0, "Une phrase commence toujours par une majuscule.", "✏️"),
+  Q("Une phrase se termine par…", ["un point", "une majuscule", "une lettre"], 0, "Une phrase se termine par un point.", "✏️"),
+  Q("Combien de mots y a-t-il dans la phrase « Le chat dort. » ?", ["3", "2", "4"], 0, "Le, chat, dort : 3 mots.", "🐱💤"),
+  Q("Quel mot rime avec « chat » ?", ["rat", "lune", "vélo"], 0, "Chat et rat finissent par le même son.", "🐱"),
+  Q("Quel mot rime avec « lune » ?", ["prune", "table", "loup"], 0, "Lune et prune finissent par le même son.", "🌙"),
+  OR("Remets les mots dans l'ordre pour faire une phrase.", ["Le", "chat", "dort."], "Le chat dort.", "🐱"),
+  OR("Remets les lettres dans l'ordre de l'alphabet.", ["a", "b", "c", "d"], "a, b, c, d : c'est l'ordre de l'alphabet.", "🔤")
+] } ] };
+var REV_MATHS = { id: "rev-maths", titre: "Révisions CP : mathématiques", poids: 1, exos: [ { titre: "Maths CP", qs: [
+  Q("Combien font 2 + 3 ?", ["5", "4", "6"], 0, "2 + 3 = 5.", "🍎🍎 ➕ 🍎🍎🍎"),
+  Q("Combien font 4 + 1 ?", ["5", "4", "6"], 0, "4 + 1 = 5.", "➕"),
+  Q("Combien font 3 + 3 ?", ["6", "5", "7"], 0, "3 + 3 = 6.", "➕"),
+  Q("Combien font 5 + 2 ?", ["7", "6", "8"], 0, "5 + 2 = 7.", "➕"),
+  Q("Combien font 6 + 4 ?", ["10", "9", "11"], 0, "6 + 4 = 10.", "➕"),
+  Q("Il y a 5 bonbons. J'en mange 2. Combien en reste-t-il ?", ["3", "2", "4"], 0, "5 - 2 = 3.", "🍬🍬🍬🍬🍬"),
+  Q("Quel nombre vient juste après 9 ?", ["10", "8", "11"], 0, "Après 9, on dit 10.", "🔢"),
+  Q("Quel nombre vient juste avant 15 ?", ["14", "16", "13"], 0, "Avant 15, on dit 14.", "🔢"),
+  Q("Quel nombre vient juste après 19 ?", ["20", "18", "21"], 0, "Après 19, on dit 20.", "🔢"),
+  Q("Quel est le plus grand nombre ?", ["12", "8", "10"], 0, "12 est le plus grand des trois.", "🔢"),
+  Q("Quel est le plus petit nombre ?", ["7", "15", "9"], 0, "7 est le plus petit des trois.", "🔢"),
+  Q("Une dizaine, c'est combien ?", ["10", "5", "100"], 0, "Une dizaine, c'est 10.", "🔟"),
+  Q("Combien de pommes vois-tu ?", ["6", "5", "7"], 0, "Je compte : 6 pommes.", "🍎🍎🍎🍎🍎🍎"),
+  Q("Complète : 2, 4, 6, … ?", ["8", "7", "9"], 0, "On compte de 2 en 2 : 2, 4, 6, 8.", "🔢"),
+  Q("10 = 7 + ?", ["3", "2", "4"], 0, "7 + 3 = 10.", "🔟"),
+  Q("Combien de côtés a un triangle ?", ["3", "4", "5"], 0, "Un triangle a 3 côtés.", "🔺"),
+  Q("Combien de côtés a un carré ?", ["4", "3", "5"], 0, "Un carré a 4 côtés.", "🟦"),
+  Q("8 est plus grand que 5.", VF, 0, "Vrai : 8 est plus grand que 5.", "🔢"),
+  Q("3 + 2 = 6", VF, 1, "Faux : 3 + 2 = 5.", "➕"),
+  OR("Range du plus petit au plus grand.", ["3", "7", "12", "18"], "3, 7, 12, 18 : du plus petit au plus grand.", "🔢")
+] } ] };
+
+/* ---------- Matières ---------- */
+var MATIERES = [
+  { id: "francais", nom: "Français", emoji: "📖", lecons: [], rev: REV_FR },
+  { id: "maths", nom: "Mathématiques", emoji: "🔢", lecons: [], rev: REV_MATHS },
+  { id: "histoire", nom: "Histoire-géographie", emoji: "🕰️", lecons: [H1, H2] }
+];
+
+/* ---------- État enregistré ---------- */
+function defaultState() { return { history: [], stats: {}, quiz: { last: "", streak: 0, total: 0 }, devoirs: {}, auto: true, maj: 0 }; }
+function loadState() {
+  try {
+    var s = window.localStorage.getItem(STORE);
+    if (s) {
+      var o = JSON.parse(s);
+      if (o && o.history) {
+        if (!o.stats) { o.stats = {}; }
+        if (!o.quiz) { o.quiz = { last: "", streak: 0, total: 0 }; }
+        if (!o.devoirs) { o.devoirs = {}; }
+        if (o.auto === undefined) { o.auto = true; }
+        return o;
+      }
+    }
+  } catch (e) {}
+  return defaultState();
+}
+/* ---------- Synchronisation sur un serveur (Supabase) ----------
+   Renseigner url et key (voir README.md). Tant qu'ils sont vides, l'appli marche seule, sans serveur. */
+var SYNC = { url: "", key: "", id: "mike", poll: 10000 };
+var syncOn = !!(SYNC.url && SYNC.key && SYNC.id);
+var syncTimer = null, ecranHome = false;
+var LIBELLES = { off: "Synchronisation non configurée", att: "Synchronisation…", ok: "Synchronisé", hors: "Hors ligne : envoi dès que le réseau revient" };
+function majEtat(e) {
+  var el = document.getElementById("version");
+  if (el) { el.textContent = VERSION + " · ☁️ " + LIBELLES[e]; }
+}
+function entetesSb(extra) {
+  var h = { "apikey": SYNC.key, "Authorization": "Bearer " + SYNC.key, "Content-Type": "application/json" };
+  for (var k in extra) { h[k] = extra[k]; }
+  return h;
+}
+function planPush() {
+  if (!syncOn) { return; }
+  majEtat("att");
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(pousser, 1200);
+}
+function pousser() {
+  if (!syncOn) { return; }
+  try {
+    var corps = JSON.stringify({ id: SYNC.id, data: state, updated_at: new Date(state.maj || Date.now()).toISOString() });
+    fetch(SYNC.url + "/rest/v1/mike_state", { method: "POST", keepalive: corps.length < 60000, headers: entetesSb({ "Prefer": "resolution=merge-duplicates,return=minimal" }), body: corps })
+      .then(function (r) { majEtat(r.ok ? "ok" : "hors"); })
+      .catch(function () { majEtat("hors"); });
+  } catch (e) { majEtat("hors"); }
+}
+function normalise(o) {
+  var d = defaultState();
+  for (var k in d) { if (o[k] === undefined || o[k] === null) { o[k] = d[k]; } }
+  if (!o.quiz.days) { o.quiz.days = {}; }
+  return o;
+}
+function adopte(d) {
+  state = normalise(d);
+  try { window.localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {}
+  if (ecranHome) { showHome(); }
+}
+function tirer() {
+  if (!syncOn) { return; }
+  try {
+    fetch(SYNC.url + "/rest/v1/mike_state?id=eq." + encodeURIComponent(SYNC.id) + "&select=data", { headers: entetesSb({}) })
+      .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
+      .then(function (rows) {
+        var d = rows && rows.length ? rows[0].data : null;
+        if (d && d.history && (d.maj || 0) > (state.maj || 0)) { adopte(d); majEtat("ok"); }
+        else if (!d || (state.maj || 0) > ((d && d.maj) || 0)) { pousser(); }
+        else { majEtat("ok"); }
+      })
+      .catch(function () { majEtat("hors"); });
+  } catch (e) { majEtat("hors"); }
+}
+function demarreSync() {
+  if (!syncOn) { majEtat("off"); return; }
+  majEtat("att");
+  tirer();
+  setInterval(function () { if (!document.hidden) { tirer(); } }, SYNC.poll);
+  document.addEventListener("visibilitychange", function () { if (document.hidden) { if (syncTimer) { clearTimeout(syncTimer); pousser(); } } else { tirer(); } });
+  window.addEventListener("focus", tirer);
+  window.addEventListener("online", tirer);
+}
+function saveState() {
+  state.maj = Date.now();
+  try { window.localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {}
+  planPush();
+}
+var state = loadState();
+var cur = null;
+var app = document.getElementById("app");
+document.getElementById("version").textContent = VERSION;
+
+/* ---------- Outils ---------- */
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function iso(d) { var j = d.getDate(), m = d.getMonth() + 1; return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (j < 10 ? "0" + j : j); }
+function isoToday() { return iso(new Date()); }
+function isoHier() { var d = new Date(); d.setDate(d.getDate() - 1); return iso(d); }
+var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+var MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+function dateLongue() { var d = new Date(); return JOURS[d.getDay()] + " " + d.getDate() + " " + MOIS[d.getMonth()]; }
+function bind(id, fn) { var el = document.getElementById(id); if (el) { el.addEventListener("click", fn); } }
+function go(html) { ecranHome = false; app.innerHTML = html; window.scrollTo(0, 0); }
+function melangeTab(arr) { var a = arr.slice(), i, j, t; for (i = a.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function fmt(n) { return (Math.round(n * 10) / 10).toString().replace(".", ","); }
+function barre(p) { return '<div class="barre"><i style="width:' + Math.round(p * 100) + '%"></i></div>'; }
+function lecsPlates() { var r = [], t = toutesLecons(); for (var i = 0; i < t.length; i++) { r.push(t[i].l); } return r; }
+function toutesLecons() { var r = [], i, j; for (i = 0; i < MATIERES.length; i++) { for (j = 0; j < MATIERES[i].lecons.length; j++) { r.push({ m: MATIERES[i], l: MATIERES[i].lecons[j] }); } } return r; }
+function leconParId(id) { var t = toutesLecons(); for (var i = 0; i < t.length; i++) { if (t[i].l.id === id) { return t[i]; } } return null; }
+
+/* ---------- Voix ---------- */
+var voixFr = null;
+function chercheVoix() {
+  try {
+    var v = window.speechSynthesis.getVoices();
+    for (var i = 0; i < v.length; i++) { if (v[i].lang && v[i].lang.toLowerCase().indexOf("fr") === 0) { voixFr = v[i]; break; } }
+  } catch (e) {}
+}
+try { chercheVoix(); window.speechSynthesis.onvoiceschanged = chercheVoix; } catch (e) {}
+function stopVoix() { try { window.speechSynthesis.cancel(); } catch (e) {} }
+function parler(texte) {
+  try {
+    var synth = window.speechSynthesis;
+    if (!synth || typeof SpeechSynthesisUtterance === "undefined") { return; }
+    var t = String(texte).replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+    if (!t) { return; }
+    synth.cancel();
+    if (!voixFr) { chercheVoix(); }
+    var parts = t.match(/[^.!?:]+[.!?:]*/g) || [t];
+    for (var j = 0; j < parts.length; j++) {
+      var p = parts[j].replace(/^\s+|\s+$/g, "");
+      if (!p) { continue; }
+      var u = new SpeechSynthesisUtterance(p);
+      u.lang = "fr-FR";
+      if (voixFr) { u.voice = voixFr; }
+      u.rate = 0.85;
+      synth.speak(u);
+    }
+  } catch (e) {}
+}
+function texteQuestion(q) {
+  var t = q.q;
+  if (q.t === "ordre") { t += " Voici : " + q.items.join(", "); }
+  else if (!q.vf && q.o.length) { t += " " + q.o.join(", ou "); }
+  return t.replace(/[🟢🟡🟠]/g, function (c) { return c === "🟢" ? "Vert" : (c === "🟡" ? "Jaune" : "Orange"); });
+}
+
+/* ---------- Statistiques ---------- */
+function tauxErreur(lid) { var st = state.stats[lid]; if (!st || st.n < 1) { return 0.3; } return st.w / st.n; }
+function noteReponse(lid, juste) {
+  if (!state.stats[lid]) { state.stats[lid] = { n: 0, w: 0 }; }
+  state.stats[lid].n++;
+  if (!juste) { state.stats[lid].w++; }
+}
+function nbEtoiles(ok, total) { var r = total ? ok / total : 0; return r >= 0.9 ? 3 : (r >= 0.6 ? 2 : 1); }
+
+/* ---------- Banque de questions ---------- */
+function banque(lecs) {
+  var out = [], i, e, q, l;
+  for (i = 0; i < lecs.length; i++) {
+    l = lecs[i];
+    for (e = 0; e < l.exos.length; e++) { for (q = 0; q < l.exos[e].qs.length; q++) { out.push({ lid: l.id, src: l.exos[e].qs[q] }); } }
+  }
+  return out;
+}
+/* Prépare une question pour l'affichage (mélange des choix, sauf Vrai/Faux et couleurs) */
+function prepare(it) {
+  var s = it.src, c = { t: s.t, q: s.q, why: s.why, e: s.e, lid: it.lid };
+  if (s.t === "ordre") {
+    c.items = s.items.slice();
+    var idx = [], k;
+    for (k = 0; k < s.items.length; k++) { idx.push(k); }
+    var m = melangeTab(idx), tries = 0;
+    while (m.join() === idx.join() && tries < 10) { m = melangeTab(idx); tries++; }
+    c.melange = m;
+    return c;
+  }
+  c.o = s.o; c.a = s.a; c.vf = (s.o === VF);
+  if (!s.fixe && s.o !== VF) {
+    var bonne = s.o[s.a], o = melangeTab(s.o);
+    c.o = o; c.a = o.indexOf(bonne);
+  }
+  return c;
+}
+function tirePondere(pool) {
+  var tot = 0, k;
+  for (k = 0; k < pool.length; k++) { tot += 1 + 2 * tauxErreur(pool[k].lid); }
+  var r = Math.random() * tot, idx = pool.length - 1;
+  for (k = 0; k < pool.length; k++) { r -= 1 + 2 * tauxErreur(pool[k].lid); if (r <= 0) { idx = k; break; } }
+  return idx;
+}
+function entrelace(arr) {
+  var a = melangeTab(arr), i, j, t;
+  for (i = 1; i < a.length; i++) {
+    if (a[i].lid === a[i - 1].lid && a[i].t === a[i - 1].t) {
+      for (j = i + 1; j < a.length; j++) { if (a[j].lid !== a[i - 1].lid || a[j].t !== a[i - 1].t) { t = a[i]; a[i] = a[j]; a[j] = t; break; } }
+    }
+  }
+  return a;
+}
+/* Quiz du jour : 4 questions de français, 4 de maths, 2 d'histoire-géographie (leçons + révisions de niveau CP) */
+function construitQuiz() {
+  var quotas = [4, 4, 2], out = [], i;
+  for (i = 0; i < MATIERES.length; i++) {
+    var lecs = MATIERES[i].lecons.slice();
+    if (MATIERES[i].rev) { lecs.push(MATIERES[i].rev); }
+    var pool = banque(lecs), n = quotas[i];
+    while (n > 0 && pool.length > 0) { var k = tirePondere(pool); out.push(prepare(pool[k])); pool.splice(k, 1); n--; }
+  }
+  return entrelace(out);
+}
+/* Exercice express : autant de questions de chaque leçon, avec au moins un « dans l'ordre » de chaque */
+function construitExpress(lecs, nbParLecon) {
+  var out = [], i, k;
+  for (i = 0; i < lecs.length; i++) {
+    var pool = banque([lecs[i]]), ordres = [], autres = [];
+    for (k = 0; k < pool.length; k++) { if (pool[k].src.t === "ordre") { ordres.push(pool[k]); } else { autres.push(pool[k]); } }
+    var prise = [];
+    if (ordres.length) { prise.push(ordres[Math.floor(Math.random() * ordres.length)]); }
+    autres = melangeTab(autres);
+    while (prise.length < nbParLecon && autres.length) { prise.push(autres.shift()); }
+    for (k = 0; k < prise.length; k++) { out.push(prepare(prise[k])); }
+  }
+  return entrelace(out);
+}
+function construitExo(l, e) {
+  var out = [], qs = l.exos[e].qs;
+  for (var k = 0; k < qs.length; k++) { out.push(prepare({ lid: l.id, src: qs[k] })); }
+  return melangeTab(out);
+}
+
+/* ---------- Accueil ---------- */
+document.getElementById("b-home").addEventListener("click", function () { stopVoix(); showHome(); });
+
+function showHome() {
+  var h = '<div class="carte"><h2>Salut Mike ! 👋</h2><p>Nous sommes ' + dateLongue() + '. Choisis ce que tu veux faire.</p></div>';
+
+  var auj = isoToday(), i;
+
+  var qz = state.quiz, fait = (qz.last === auj), enc = state.enc;
+  var encQuiz = !!(enc && enc.kind === "quiz");
+  h += '<div class="carte quiz"><h2>Quiz du jour 🎯</h2>';
+  if (encQuiz) { h += '<p>' + (enc.qi >= enc.qs.length ? 'Ton quiz est terminé : touche pour voir ton résultat.' : 'Tu t\'étais arrêté à la question ' + (enc.qi + 1) + ' sur ' + enc.qs.length + '. On continue ?') + '</p>'; }
+  else if (fait) { h += '<p><span class="pastille">Fait aujourd\'hui</span> Bravo ! Tu peux en refaire un pour t\'entraîner.</p>'; }
+  else { h += '<p>Dix questions de français, de maths et d\'histoire. Un quiz par jour, c\'est le secret !</p>'; }
+  if (qz.streak > 0) { h += '<p class="petit">🔥 ' + qz.streak + ' jour' + (qz.streak > 1 ? "s" : "") + ' de suite</p>'; }
+  if (encQuiz) { h += '<button class="bouton" id="b-reprise">Reprendre le quiz</button></div>'; }
+  else { h += '<button class="bouton" id="b-quiz">' + (fait ? "Refaire un quiz" : "Faire le quiz du jour") + '</button></div>'; }
+  if (enc && !encQuiz) {
+    h += '<div class="carte"><h2>Exercice commencé</h2><p>' + esc(enc.label) + ' : ' + (enc.qi >= enc.qs.length ? 'terminé, touche pour voir ton résultat.' : 'tu t\'étais arrêté à la question ' + (enc.qi + 1) + ' sur ' + enc.qs.length + '.') + '</p><button class="bouton orange" id="b-reprise">Reprendre</button></div>';
+  }
+
+  h += '<div class="carte"><h2>Mes leçons 📚</h2>';
+  for (i = 0; i < MATIERES.length; i++) { h += '<button class="option" id="m' + i + '">' + MATIERES[i].emoji + ' ' + esc(MATIERES[i].nom) + '</button>'; }
+  h += '</div>';
+  h += '<button class="bouton second" id="b-prog">📈 Ma progression</button>';
+  h += '<button class="bouton second" id="b-auto">🔊 Lecture à voix haute : ' + (state.auto ? "OUI" : "NON") + '</button>';
+  go(h);
+  ecranHome = true;
+
+  bind("b-reprise", function () { reprendre(); });
+  bind("b-quiz", function () { lancer("quiz", "Quiz du jour", construitQuiz(), mkCtx("home")); });
+  bind("b-prog", showProgression);
+  bind("b-auto", function () { state.auto = !state.auto; saveState(); if (!state.auto) { stopVoix(); } showHome(); });
+  for (var k = 0; k < MATIERES.length; k++) { (function (n) { bind("m" + n, function () { showMatiere(n); }); })(k); }
+}
+
+/* ---------- Matières et leçons ---------- */
+function showMatiere(mi) {
+  var m = MATIERES[mi], h = '<div class="carte"><h2>' + m.emoji + ' ' + esc(m.nom) + '</h2>';
+  if (!m.lecons.length) { h += '<p>Les leçons arrivent bientôt. On les ajoute au fur et à mesure !</p>'; }
+  if (m.id === "histoire") { h += '<div class="carte express" style="margin-top:10px"><b>⭐ Exercice express : H1 et H2</b><button class="bouton orange" id="b-express">C\'est parti !</button></div>'; }
+  for (var i = 0; i < m.lecons.length; i++) {
+    h += '<div class="rang"><b>' + m.lecons[i].emoji + ' ' + esc(m.lecons[i].titre) + '</b>';
+    h += '<div class="duo"><button class="bouton second" id="l' + i + '">Leçon</button><button class="bouton orange" id="e' + i + '">Exercices</button></div></div>';
+  }
+  h += '</div><button class="bouton second" id="b-ret">Retour</button>';
+  go(h);
+  for (var k = 0; k < m.lecons.length; k++) {
+    (function (n) { bind("l" + n, function () { showLecon(mi, n); }); bind("e" + n, function () { showExos(mi, n); }); })(k);
+  }
+  bind("b-express", function () { lancer("express", "Exercice express H1 et H2", construitExpress([H1, H2], 6), mkCtx("mat", mi)); });
+  bind("b-ret", showHome);
+}
+function showLecon(mi, li) {
+  var l = MATIERES[mi].lecons[li], i;
+  var h = '<div class="carte"><h2>' + l.emoji + ' ' + esc(l.titre) + '</h2>';
+  h += '<div class="grand-emoji">' + l.visuel + '</div>';
+  h += '<button class="ecoute" id="b-ecoute">🔊 Écouter la leçon</button>';
+  h += '<p><b>À savoir par cœur :</b></p><div class="lecon-txt"><ul>';
+  for (i = 0; i < l.retenir.length; i++) { h += '<li>' + esc(l.retenir[i]) + '</li>'; }
+  h += '</ul></div>';
+  h += '<p style="margin-top:14px"><b>À lire seulement :</b></p><div class="lecon-txt lire"><ul>';
+  for (i = 0; i < l.lire.length; i++) { h += '<li>' + esc(l.lire[i]) + '</li>'; }
+  h += '</ul></div>';
+  h += '<button class="bouton orange" id="b-go">Faire les exercices</button>';
+  h += '<button class="bouton second" id="b-ret">Retour</button></div>';
+  go(h);
+  bind("b-ecoute", function () { parler("Leçon. " + l.titre.replace("·", ":") + ". " + l.retenir.join(" ")); });
+  bind("b-go", function () { stopVoix(); showExos(mi, li); });
+  bind("b-ret", function () { stopVoix(); showMatiere(mi); });
+}
+function showExos(mi, li) {
+  var l = MATIERES[mi].lecons[li], i;
+  var h = '<div class="carte"><h2>' + l.emoji + ' Exercices · ' + esc(l.titre) + '</h2>';
+  for (i = 0; i < l.exos.length; i++) { h += '<button class="option" id="x' + i + '">' + esc(l.exos[i].titre) + ' <span class="petit">(' + l.exos[i].qs.length + ' questions)</span></button>'; }
+  h += '<button class="bouton orange" id="x-tout">🎲 Un mélange de toute la leçon</button>';
+  h += '</div><button class="bouton second" id="b-ret">Retour</button>';
+  go(h);
+  for (i = 0; i < l.exos.length; i++) {
+    (function (n) { bind("x" + n, function () { lancer("exo", l.titre + " : " + l.exos[n].titre, construitExo(l, n), mkCtx("exos", mi, li)); }); })(i);
+  }
+  bind("x-tout", function () { lancer("exo", l.titre + " : mélange", construitExpress([l], 8), mkCtx("exos", mi, li)); });
+  bind("b-ret", function () { showMatiere(mi); });
+}
+
+/* ---------- Déroulement d'une série de questions ---------- */
+function mkCtx(r, mi, li) {
+  return { r: r, mi: mi, li: li, retour: function () {
+    if (r === "mat") { showMatiere(mi); } else if (r === "exos") { showExos(mi, li); } else { showHome(); }
+  } };
+}
+/* Enregistre où en est la série, pour pouvoir reprendre là où Mike s'est arrêté */
+function persistEnc(qi) {
+  state.enc = { kind: cur.kind, label: cur.label, qs: cur.qs, qi: qi, ok: cur.ok, ratees: cur.ratees, r: cur.ctx.r, mi: cur.ctx.mi, li: cur.ctx.li };
+  saveState();
+}
+function reprendre() {
+  var e = state.enc;
+  if (!e) { showHome(); return; }
+  cur = { kind: e.kind, label: e.label, qs: e.qs, qi: e.qi, ok: e.ok, ratees: e.ratees || [], ctx: mkCtx(e.r, e.mi, e.li), sel: [], figee: false };
+  if (cur.qi >= cur.qs.length) { showFin(); } else { showQuestion(); }
+}
+function lancer(kind, label, qs, ctx) {
+  cur = { kind: kind, label: label, qs: qs, qi: 0, ok: 0, ratees: [], ctx: ctx, sel: [], figee: false };
+  persistEnc(0);
+  showQuestion();
+}
+function entete() {
+  var n = cur.qs.length;
+  return '<div class="suivi">' + esc(cur.label) + ' · question ' + (cur.qi + 1) + ' sur ' + n + '</div>' + barre(cur.qi / n);
+}
+function showQuestion() {
+  var q = cur.qs[cur.qi], i;
+  cur.sel = []; cur.figee = false;
+  var h = '<div class="carte">' + entete();
+  if (q.e) { h += '<div class="grand-emoji">' + q.e + '</div>'; }
+  h += '<div class="question">' + esc(q.q) + '</div>';
+  h += '<button class="ecoute" id="b-ecoute">🔊 Écouter</button>';
+  if (q.t === "ordre") {
+    h += '<p class="petit">Touche les cases dans le bon ordre : la première en premier.</p>';
+    for (i = 0; i < q.melange.length; i++) { h += '<button class="option" id="o' + q.melange[i] + '">' + esc(q.items[q.melange[i]]) + '</button>'; }
+    h += '<div class="reponse-ordre" id="rep-ordre"><span class="petit">Ta réponse apparaît ici.</span></div>';
+    h += '<button class="bouton second" id="b-efface">Effacer et recommencer</button>';
+  } else {
+    for (i = 0; i < q.o.length; i++) { h += '<button class="option" id="o' + i + '">' + esc(q.o[i]) + '</button>'; }
+  }
+  h += '<div id="retour"></div></div>';
+  h += '<button class="bouton second" id="b-stop">Arrêter</button>';
+  go(h);
+  bind("b-ecoute", function () { parler(texteQuestion(q)); });
+  bind("b-stop", function () { stopVoix(); cur.ctx.retour(); });
+  if (q.t === "ordre") {
+    for (i = 0; i < q.items.length; i++) { (function (n) { bind("o" + n, function () { choisirOrdre(n); }); })(i); }
+    bind("b-efface", function () { if (cur.figee) { return; } showQuestionOrdreReset(); });
+  } else {
+    for (i = 0; i < q.o.length; i++) { (function (n) { bind("o" + n, function () { repondre(n); }); })(i); }
+  }
+  if (state.auto) { parler(texteQuestion(q)); }
+}
+function showQuestionOrdreReset() {
+  var q = cur.qs[cur.qi], i;
+  cur.sel = [];
+  for (i = 0; i < q.items.length; i++) { var b = document.getElementById("o" + i); if (b) { b.disabled = false; b.className = "option"; } }
+  document.getElementById("rep-ordre").innerHTML = '<span class="petit">Ta réponse apparaît ici.</span>';
+}
+function termineQuestion(juste, texteJuste) {
+  var q = cur.qs[cur.qi];
+  cur.figee = true;
+  noteReponse(q.lid, juste);
+  if (juste) { cur.ok++; } else { cur.ratees.push(q); }
+  persistEnc(cur.qi + 1);
+  var last = (cur.qi >= cur.qs.length - 1);
+  var m = '<div class="retour ' + (juste ? "ok" : "ko") + '"><p><b>' + (juste ? "Bravo ! 🎉" : "Pas grave, on apprend ! 💪") + '</b></p><p>' + esc(texteJuste) + '</p>';
+  m += '<button class="ecoute" id="b-ecoute2">🔊 Écouter</button></div>';
+  m += '<button class="bouton" id="b-next">' + (last ? "Voir mon résultat" : "Question suivante") + '</button>';
+  document.getElementById("retour").innerHTML = m;
+  bind("b-ecoute2", function () { parler((juste ? "Bravo ! " : "Pas grave. ") + texteJuste); });
+  bind("b-next", function () { stopVoix(); cur.qi++; if (cur.qi >= cur.qs.length) { showFin(); } else { showQuestion(); } });
+  if (state.auto) { parler((juste ? "Bravo ! " : "Pas grave. ") + texteJuste); }
+  saveState();
+}
+function repondre(i) {
+  if (cur.figee) { return; }
+  var q = cur.qs[cur.qi], j;
+  for (j = 0; j < q.o.length; j++) {
+    var b = document.getElementById("o" + j);
+    b.disabled = true;
+    if (j === q.a) { b.className = "option juste"; }
+    else if (j === i) { b.className = "option faux"; }
+  }
+  termineQuestion(i === q.a, (i === q.a ? "" : "La bonne réponse : " + (q.o[q.a]).replace(/^[🟢🟡🟠] /, "") + ". ") + q.why);
+}
+function choisirOrdre(n) {
+  if (cur.figee) { return; }
+  var q = cur.qs[cur.qi], i;
+  cur.sel.push(n);
+  var b = document.getElementById("o" + n);
+  b.disabled = true; b.className = "option pris";
+  var r = "";
+  for (i = 0; i < cur.sel.length; i++) { r += '<div><b>' + (i + 1) + '.</b> ' + esc(q.items[cur.sel[i]]) + '</div>'; }
+  document.getElementById("rep-ordre").innerHTML = r;
+  if (cur.sel.length === q.items.length) {
+    var juste = true;
+    for (i = 0; i < cur.sel.length; i++) { if (cur.sel[i] !== i) { juste = false; } }
+    var txt = juste ? q.why : "Le bon ordre : " + q.items.join(", puis ") + ".";
+    var bt = document.getElementById("b-efface"); if (bt) { bt.style.display = "none"; }
+    termineQuestion(juste, txt);
+  }
+}
+function showFin() {
+  var n = cur.qs.length, ok = cur.ok, et = nbEtoiles(ok, n), i, s = "";
+  for (i = 0; i < 3; i++) { s += (i < et ? "★" : "☆"); }
+  state.history.push({ d: isoToday(), k: cur.kind, g: cur.label, s: Math.round(ok / n * 10), ok: ok, n: n });
+  if (state.history.length > 300) { state.history = state.history.slice(state.history.length - 300); }
+  if (cur.kind === "quiz") {
+    var qz = state.quiz, auj = isoToday();
+    if (qz.last !== auj) { qz.streak = (qz.last === isoHier()) ? qz.streak + 1 : 1; qz.total++; qz.last = auj; }
+  }
+  state.enc = null;
+  saveState();
+  var msg = et === 3 ? "Excellent, Mike ! Tu connais très bien ta leçon." : (et === 2 ? "Très bien ! Encore un petit effort et ce sera parfait." : "Courage ! Relis ta leçon et recommence, tu vas y arriver.");
+  var h = '<div class="carte"><div class="etoiles">' + s + '</div><div class="note">' + ok + ' / ' + n + '</div><p style="text-align:center"><b>' + msg + '</b></p>';
+  if (cur.ratees.length) {
+    h += '<p><b>À revoir :</b></p><div class="lecon-txt"><ul>';
+    for (i = 0; i < cur.ratees.length; i++) { h += '<li>' + esc(cur.ratees[i].q) + '<br><span class="petit">' + esc(cur.ratees[i].why) + '</span></li>'; }
+    h += '</ul></div>';
+  }
+  h += '<button class="bouton second" id="b-ret">Retour</button>';
+  h += '<button class="bouton second" id="b-acc">Accueil</button></div>';
+  go(h);
+  var c = cur;
+  bind("b-ret", c.ctx.retour);
+  bind("b-acc", showHome);
+}
+function findSrc(q) {
+  var t = toutesLecons(), i, e, k;
+  for (i = 0; i < t.length; i++) { for (e = 0; e < t[i].l.exos.length; e++) { for (k = 0; k < t[i].l.exos[e].qs.length; k++) { if (t[i].l.exos[e].qs[k].q === q.q) { return t[i].l.exos[e].qs[k]; } } } }
+  return null;
+}
+
+/* ---------- Progression ---------- */
+function statsLecon(lid) {
+  var st = state.stats[lid];
+  if (!st || !st.n) { return null; }
+  return { n: st.n, ok: st.n - st.w, p: (st.n - st.w) / st.n };
+}
+function bilanTexte() {
+  var t = "Bilan de Mike (CP) - " + dateLongue() + "\n\n";
+  var ls = toutesLecons(), i;
+  for (i = 0; i < ls.length; i++) {
+    var s = statsLecon(ls[i].l.id);
+    t += ls[i].l.titre + " : " + (s ? Math.round(s.p * 100) + " % de réussite (" + s.ok + " bonnes réponses sur " + s.n + ")" : "pas encore travaillée") + "\n";
+  }
+  t += "\nQuiz du jour : " + state.quiz.total + " fait(s), " + state.quiz.streak + " jour(s) de suite\n\nDernières séances :\n";
+  var h = state.history.slice(-8);
+  for (i = h.length - 1; i >= 0; i--) { t += "- " + h[i].d + " · " + h[i].g + " : " + h[i].ok + "/" + h[i].n + "\n"; }
+  return t;
+}
+function showProgression() {
+  var h = '<div class="carte"><h2>📈 Ma progression</h2>', ls = toutesLecons(), i;
+  for (i = 0; i < ls.length; i++) {
+    var s = statsLecon(ls[i].l.id);
+    h += '<div class="rang"><b>' + ls[i].l.emoji + ' ' + esc(ls[i].l.titre) + '</b><br>';
+    h += s ? ('<span class="petit">' + Math.round(s.p * 100) + ' % de bonnes réponses · ' + s.n + ' questions</span>' + barre(s.p)) : '<span class="petit">Pas encore travaillée</span>';
+    h += '</div>';
+  }
+  h += '<p><b>🔥 Quiz du jour :</b> ' + state.quiz.total + ' fait' + (state.quiz.total > 1 ? "s" : "") + ', ' + state.quiz.streak + ' jour' + (state.quiz.streak > 1 ? "s" : "") + ' de suite</p>';
+  h += '<button class="bouton" id="b-bilan">Voir le bilan pour maman</button>';
+  h += '<button class="bouton second" id="b-ret">Retour</button>';
+  h += '<button class="bouton second" id="b-reset">Tout effacer et recommencer</button><div id="reset-zone"></div></div>';
+  go(h);
+  bind("b-bilan", showBilan);
+  bind("b-ret", showHome);
+  bind("b-reset", function () {
+    document.getElementById("reset-zone").innerHTML = '<div class="retour ko"><p>Tout sera effacé : scores et séries de jours. C\'est définitif.</p><button class="bouton" id="b-ok" style="background:#c0392b;border-color:#8e281d">Oui, tout effacer</button><button class="bouton second" id="b-non">Non, garder</button></div>';
+    bind("b-ok", function () { state = defaultState(); saveState(); showHome(); });
+    bind("b-non", function () { document.getElementById("reset-zone").innerHTML = ""; });
+  });
+}
+function showBilan() {
+  var h = '<div class="carte"><h2>Bilan pour maman</h2><textarea class="bilan" id="bilan" readonly aria-label="Bilan à copier"></textarea>';
+  h += '<button class="bouton" id="b-copy">Copier le bilan</button><p class="petit" id="copie-msg"></p>';
+  h += '<button class="bouton second" id="b-ret">Retour</button></div>';
+  go(h);
+  var ta = document.getElementById("bilan"); ta.value = bilanTexte();
+  bind("b-copy", function () {
+    var msg = document.getElementById("copie-msg");
+    try { ta.focus(); ta.select(); ta.setSelectionRange(0, 99999); } catch (e) {}
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    if (!ok) { try { navigator.clipboard.writeText(ta.value); ok = true; } catch (e) {} }
+    msg.textContent = ok ? "Bilan copié." : "Copie impossible ici : touche le texte, sélectionne tout et copie.";
+  });
+  bind("b-ret", showProgression);
+}
+
+showHome();
+demarreSync();
+</script>
+</body>
+</html>
