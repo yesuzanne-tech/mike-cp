@@ -65,6 +65,8 @@ p { margin: 0 0 12px 0; }
 .reponse-ordre { min-height: 70px; background: #f4f9ff; border: 3px dashed var(--bleu); border-radius: 10px; padding: 8px 12px; font-size: 22px; margin-top: 10px; }
 .reponse-ordre div { margin: 4px 0; }
 .bilan { width: 100%; font-family: "Courier New", monospace; font-size: 15px; min-height: 260px; padding: 12px; border: 3px solid var(--orange); border-radius: 8px; }
+.lien-voix { font-family: var(--police); font-size: 20px; font-weight: bold; color: var(--bleu-fonce); background: #fff; border: 3px solid var(--bleu); border-radius: 14px; padding: 10px 18px; min-height: 48px; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.pied-voix { text-align: center; padding: 14px 0 0 0; }
 .pied { text-align: center; font-size: 13px; color: #6b7d96; padding: 8px 0 24px 0; }
 .duo { display: flex; gap: 10px; }
 .duo .bouton { flex: 1; }
@@ -74,6 +76,7 @@ p { margin: 0 0 12px 0; }
 <body>
 <div class="bandeau"><div class="bandeau-in"><h1 class="titre">Mission CP · Mike</h1><span><button class="petit-bouton" id="b-maj" type="button" aria-label="Actualiser" title="Actualiser" style="padding:6px 10px;vertical-align:middle"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><polyline points="20 3 20 8 15 8"/></svg></button> <button class="petit-bouton" id="b-home" type="button">Accueil</button></span></div></div>
 <main id="app"></main>
+<div class="pied-voix"><button class="lien-voix" id="b-voix" type="button"></button></div>
 <div class="pied" id="version"></div>
 
 <script>
@@ -294,6 +297,7 @@ function normalise(o) {
 }
 function adopte(d) {
   state = normalise(d);
+  majVoix();
   try { window.localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {}
   if (ecranHome) { showHome(); }
 }
@@ -441,7 +445,7 @@ function entrelace(arr) {
 }
 /* Quiz du jour : 4 questions de français, 4 de maths, 2 d'histoire-géographie (leçons + révisions de niveau CP) */
 function construitQuiz() {
-  var quotas = [4, 4, 2], out = [], i;
+  var quotas = [8, 8, 4], out = [], i;
   for (i = 0; i < MATIERES.length; i++) {
     var lecs = MATIERES[i].lecons.slice();
     if (MATIERES[i].rev) { lecs.push(MATIERES[i].rev); }
@@ -472,6 +476,17 @@ function construitExo(l, e) {
 
 /* ---------- Accueil ---------- */
 document.getElementById("b-home").addEventListener("click", function () { stopVoix(); showHome(); });
+function majVoix() {
+  var b = document.getElementById("b-voix");
+  if (b) { b.textContent = (state.auto ? "\uD83D\uDD0A" : "\uD83D\uDD07") + " Lecture à voix haute : " + (state.auto ? "OUI" : "NON") + " (toucher pour changer)"; }
+}
+document.getElementById("b-voix").addEventListener("click", function () {
+  state.auto = !state.auto;
+  saveState();
+  if (!state.auto) { stopVoix(); }
+  majVoix();
+});
+majVoix();
 document.getElementById("b-maj").addEventListener("click", function () {
   stopVoix();
   var fait = false;
@@ -502,14 +517,12 @@ function showHome() {
   for (i = 0; i < MATIERES.length; i++) { h += '<button class="option" id="m' + i + '">' + MATIERES[i].emoji + ' ' + esc(MATIERES[i].nom) + '</button>'; }
   h += '</div>';
   h += '<button class="bouton second" id="b-prog">📈 Ma progression</button>';
-  h += '<button class="bouton second" id="b-auto">🔊 Lecture à voix haute : ' + (state.auto ? "OUI" : "NON") + '</button>';
   go(h);
   ecranHome = true;
 
   bind("b-reprise", function () { reprendre(); });
   bind("b-quiz", function () { lancer("quiz", "Quiz du jour", construitQuiz(), mkCtx("home")); });
   bind("b-prog", showProgression);
-  bind("b-auto", function () { state.auto = !state.auto; saveState(); if (!state.auto) { stopVoix(); } showHome(); });
   for (var k = 0; k < MATIERES.length; k++) { (function (n) { bind("m" + n, function () { showMatiere(n); }); })(k); }
 }
 
