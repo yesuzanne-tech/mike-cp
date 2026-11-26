@@ -81,7 +81,7 @@ details.ex summary { cursor: pointer; font-weight: bold; font-size: 17px; paddin
 </style>
 </head>
 <body>
-<div class="bandeau"><div class="bandeau-in"><h1 class="titre">Mission CP · Mike</h1><span><button class="petit-bouton" id="b-maj" type="button" aria-label="Actualiser" title="Actualiser" style="padding:6px 10px;vertical-align:middle"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><polyline points="20 3 20 8 15 8"/></svg></button> <button class="petit-bouton" id="b-home" type="button">Accueil</button></span></div></div>
+<div class="bandeau"><div class="bandeau-in"><h1 class="titre">Mission CP · Mike</h1><span><button class="petit-bouton" id="b-maj" type="button" aria-label="Actualiser" title="Actualiser" style="padding:6px 10px;vertical-align:middle"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><polyline points="20 3 20 8 15 8"/></svg></button> <button class="petit-bouton" id="b-home" type="button" aria-label="Accueil" title="Accueil" style="padding:6px 10px;vertical-align:middle"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M3 11.5l9-8 9 8"/><path d="M5.5 10v10.5h4.5v-6h4v6h4.5V10"/></svg></button></span></div></div>
 <main id="app"></main>
 <div class="pied-voix"><button class="lien-voix" id="b-voix" type="button"></button></div>
 <div class="pied" id="version"></div>
@@ -634,7 +634,7 @@ function showHome() {
   }
 
   var devOn = devActifs().length > 0;
-  h += '<div class="carte"><h2>Devoirs de la maîtresse 📝</h2><p>' + (devOn ? 'Les leçons à apprendre et les mini-quiz pour l\'école.' : 'Pas de devoir pour le moment.') + '</p><button class="bouton orange" id="b-dev"' + (devOn ? '' : ' disabled style="opacity:.4"') + '>Voir mes devoirs</button></div>';
+  h += '<div class="carte"><h2>Devoirs de la maîtresse 📝</h2><p>' + (devOn ? 'Les leçons à apprendre et les mini-quiz pour l\'école.' : 'Pas de devoir pour le moment. Prochain jour de devoirs : <b>' + prochainDevoirTxt() + '</b>.') + '</p><button class="bouton orange" id="b-dev"' + (devOn ? '' : ' disabled style="opacity:.4"') + '>Voir mes devoirs</button></div>';
   h += '<div class="carte"><h2>Mes leçons 📚</h2>';
   for (i = 0; i < MATIERES.length; i++) { h += '<button class="option" id="m' + i + '">' + MATIERES[i].emoji + ' ' + esc(MATIERES[i].nom) + '</button>'; }
   h += '</div>';
@@ -655,6 +655,10 @@ function showHome() {
    Le module n'est actif que jusqu'à cette date incluse ; sans devoir actif, le bouton est grisé. */
 var DEVOIRS = [];
 var NB_DEV_SERIES = 5, NB_DEV_Q = 10, devRetour = null;
+var NOMS_JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"], NOMS_MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+/* Jours d'école : lundi, mardi, jeudi, vendredi. Le devoir attendu est celui du prochain jour d'école. */
+function prochainJourEcole() { var d = new Date(); do { d.setDate(d.getDate() + 1); } while ([1, 2, 4, 5].indexOf(d.getDay()) < 0); return d; }
+function prochainDevoirTxt() { var d = prochainJourEcole(); return NOMS_JOURS[d.getDay()] + " " + d.getDate() + " " + NOMS_MOIS[d.getMonth()]; }
 function devActif(d) { return !!d.date && d.date >= isoToday(); }
 function devActifs() { var r = []; for (var i = 0; i < DEVOIRS.length; i++) { if (devActif(DEVOIRS[i])) { r.push(DEVOIRS[i]); } } return r; }
 function devParId(id) { for (var i = 0; i < DEVOIRS.length; i++) { if (DEVOIRS[i].id === id) { return DEVOIRS[i]; } } return null; }
@@ -695,7 +699,7 @@ function buildDevQuiz(d, serie) {
 function showDevoirs() {
   devRetour = null;
   var h = '<div class="carte"><h2>Devoirs de la maîtresse 📝</h2><p>Les leçons à apprendre pour l\'école. Lis la leçon, fais les exercices, puis passe les 5 mini-quiz de 10 questions.</p></div>';
-  if (!devActifs().length) { h += '<div class="carte"><p>Aucun devoir pour le moment.</p></div>'; }
+  if (!devActifs().length) { h += '<div class="carte"><p>Aucun devoir pour le moment.<br>Prochain jour de devoirs : <b>' + prochainDevoirTxt() + '</b>.</p></div>'; }
   for (var i = DEVOIRS.length - 1; i >= 0; i--) {
     var d = DEVOIRS[i];
     if (!devActif(d)) { continue; }
@@ -900,7 +904,7 @@ function showFin() {
   var n = cur.qs.length, ok = cur.ok, et = nbEtoiles(ok, n), i, s = "";
   for (i = 0; i < 3; i++) { s += (i < et ? "★" : "☆"); }
   logExercice({ id: new Date().getTime(), d: isoToday(), h: heureNow(), k: cur.kind, g: cur.label, ok: ok, n: n, qs: cur.rl || [] });
-  state.history.push({ d: isoToday(), k: cur.kind, g: cur.label, s: Math.round(ok / n * 10), ok: ok, n: n });
+  state.history.push({ h: heureNow(), d: isoToday(), k: cur.kind, g: cur.label, s: Math.round(ok / n * 10), ok: ok, n: n });
   if (state.history.length > 300) { state.history = state.history.slice(state.history.length - 300); }
   if (cur.kind === "devquiz") { var dvs = devScores(cur.ctx.mi); if (dvs[cur.ctx.li] === undefined || ok > dvs[cur.ctx.li]) { dvs[cur.ctx.li] = ok; } }
   if (cur.kind === "quiz") {
@@ -923,7 +927,7 @@ function showFin() {
   var dernierLog = state.log && state.log.length ? state.log[state.log.length - 1] : null;
   if (dernierLog && dernierLog.qs && dernierLog.qs.length) { h += '<details class="ex" style="margin:12px 0"><summary>📋 Voir mes réponses</summary>' + detailExercice(dernierLog) + '</details>'; }
   h += '<button class="bouton second" id="b-ret">Retour</button>';
-  h += '<button class="bouton second" id="b-acc">Accueil</button></div>';
+  h += '<button class="bouton second" id="b-acc">🏠</button></div>';
   go(h);
   var c = cur;
   bind("b-ret", c.ctx.retour);
@@ -950,7 +954,7 @@ function bilanTexte() {
   }
   t += "\nQuiz du jour : " + state.quiz.total + " fait(s), " + state.quiz.streak + " jour(s) de suite\n\nDernières séances :\n";
   var h = state.history.slice(-8);
-  for (i = h.length - 1; i >= 0; i--) { t += "- " + h[i].d + " · " + h[i].g + " : " + h[i].ok + "/" + h[i].n + "\n"; }
+  for (i = h.length - 1; i >= 0; i--) { t += "- " + dateLisible(h[i].d) + (h[i].h ? " à " + h[i].h : "") + " · " + h[i].g + " : " + h[i].ok + "/" + h[i].n + "\n"; }
   return t;
 }
 /* ---------- Journal détaillé des exercices ---------- */
@@ -1025,25 +1029,25 @@ function carteDetailStats() {
   for (i = 0; i < lg.length; i++) {
     var e = lg[i], key = e.g;
     if (!agg[key]) { agg[key] = { ok: 0, n: 0, fois: 0 }; ordre.push(key); }
-    agg[key].dern = e.d;
+    agg[key].dern = e.d; agg[key].dernh = e.h || "";
     agg[key].ok += e.ok || 0; agg[key].n += e.n || 0; agg[key].fois++;
   }
   h += '<details class="carte repli"><summary>🧮 Détail par exercice</summary>';
   if (!ordre.length) { h += '<p class="petit">Le détail apparaîtra après le prochain exercice.</p>'; }
   for (i = ordre.length - 1; i >= 0; i--) {
     var a = agg[ordre[i]], p = a.n ? Math.round(a.ok / a.n * 100) : 0;
-    h += '<div class="rep">' + '<b>' + esc(ordre[i]) + '</b>' + '<br><span class="petit">' + a.fois + ' fois · ' + a.ok + ' bonnes réponses sur ' + a.n + ' · ' + p + ' % · dernier : ' + esc(dateLisible(a.dern)) + '</span></div>';
+    h += '<div class="rep">' + '<b>' + esc(ordre[i]) + '</b>' + '<br><span class="petit">' + a.fois + ' fois · ' + a.ok + ' bonnes réponses sur ' + a.n + ' · ' + p + ' % · dernier : ' + esc(dateLisible(a.dern)) + (a.dernh ? ' à ' + esc(a.dernh) : '') + '</span></div>';
   }
   h += '</details>';
   for (i = lg.length - 1; i >= 0 && rev.length < 15; i--) {
     for (j = (lg[i].qs || []).length - 1; j >= 0 && rev.length < 15; j--) {
       var x = lg[i].qs[j];
-      if (!x.ok && !vus[x.q]) { vus[x.q] = 1; x.dt = lg[i].d; rev.push(x); }
+      if (!x.ok && !vus[x.q]) { vus[x.q] = 1; x.dt = lg[i].d; x.ht = lg[i].h || ""; rev.push(x); }
     }
   }
   h += '<details class="carte repli"><summary>🔁 Questions à revoir</summary>';
   if (!rev.length) { h += '<p class="petit">Aucune question ratée dans les derniers exercices. Bravo !</p>'; }
-  else { h += '<p class="petit">Les questions ratées récemment, avec la bonne réponse.</p>'; for (i = 0; i < rev.length; i++) { h += '<div class="rep">❌ ' + '<b>' + esc(rev[i].q) + '</b>' + '<br><span class="petit">Bonne réponse : ' + esc(rev[i].b) + (rev[i].dt ? ' · ' + esc(dateLisible(rev[i].dt)) : '') + '</span></div>'; } }
+  else { h += '<p class="petit">Les questions ratées récemment, avec la bonne réponse.</p>'; for (i = 0; i < rev.length; i++) { h += '<div class="rep">❌ ' + '<b>' + esc(rev[i].q) + '</b>' + '<br><span class="petit">Bonne réponse : ' + esc(rev[i].b) + (rev[i].dt ? ' · ' + esc(dateLisible(rev[i].dt)) + (rev[i].ht ? ' à ' + esc(rev[i].ht) : '') : '') + '</span></div>'; } }
   return h + '</details>';
 }
 function carteJournalListe() {
@@ -1051,22 +1055,26 @@ function carteJournalListe() {
   if (!lg.length) { return h + '<p class="petit">Le journal se remplit à chaque exercice.</p></details>'; }
   h += '<p class="petit">Les ' + LOG_MAX + ' derniers exercices, du plus récent au plus ancien. Touche un exercice pour voir les questions et les réponses.</p>';
   for (var i = lg.length - 1; i >= 0; i--) {
-    h += '<details class="ex"><summary>' + esc(dateLisible(lg[i].d)) + ' · ' + esc(lg[i].g) + ' · ' + lg[i].ok + '/' + lg[i].n + '</summary>' + detailExercice(lg[i]) + '</details>';
+    h += '<details class="ex"><summary>' + esc(dateLisible(lg[i].d)) + (lg[i].h ? ' à ' + esc(lg[i].h) : '') + ' · ' + esc(lg[i].g) + ' · ' + lg[i].ok + '/' + lg[i].n + '</summary>' + detailExercice(lg[i]) + '</details>';
   }
   return h + '</details>';
 }
 
+function dateHeureTxt(e) { return esc(dateLisible(e.d)) + (e.h ? " à " + esc(e.h) : ""); }
+function dernierLog(pred) { var lg = state.log || []; for (var i = lg.length - 1; i >= 0; i--) { if (pred(lg[i])) { return lg[i]; } } return null; }
 function showProgression() {
   var h = cartesJournal() + carteDetailStats() + '<div class="carte"><h2>📈 Ma progression</h2>', ls = toutesLecons(), i;
   for (i = 0; i < ls.length; i++) {
     var s = statsLecon(ls[i].l.id);
     h += '<div class="rang"><b>' + ls[i].l.emoji + ' ' + esc(ls[i].l.titre) + '</b><br>';
-    h += s ? ('<span class="petit">' + Math.round(s.p * 100) + ' % de bonnes réponses · ' + s.n + ' questions</span>' + barre(s.p)) : '<span class="petit">Pas encore travaillée</span>';
+    h += s ? ('<span class="petit">' + Math.round(s.p * 100) + ' % de bonnes réponses · ' + s.n + ' questions' + (function () { var le = dernierLog(function (x) { return String(x.g).indexOf(ls[i].l.titre) === 0; }); return le ? ' · dernier : ' + dateHeureTxt(le) : ''; })() + '</span>' + barre(s.p)) : '<span class="petit">Pas encore travaillée</span>';
     h += '</div>';
   }
   var nmMois = (state.quiz.mois === moisCle()) ? (state.quiz.nm || 0) : 0;
   h += '<p><b>🎯 Quiz du mois :</b> ' + nmMois + ' sur 30</p>';
   h += '<p><b>🔥 Quiz du jour :</b> ' + state.quiz.total + ' fait' + (state.quiz.total > 1 ? "s" : "") + ', ' + state.quiz.streak + ' jour' + (state.quiz.streak > 1 ? "s" : "") + ' de suite</p>';
+  var dq = dernierLog(function (x) { return x.k === "quiz"; });
+  if (dq) { h += '<p class="petit">Dernier quiz : ' + dateHeureTxt(dq) + '</p>'; }
   h += carteQuizFaits();
   h += '<button class="bouton" id="b-bilan">Voir le bilan pour maman</button></div>';
   h += carteJournalListe();
