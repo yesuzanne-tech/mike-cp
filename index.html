@@ -826,6 +826,8 @@ function showFin() {
     for (i = 0; i < cur.ratees.length; i++) { h += '<li>' + esc(cur.ratees[i].q) + '<br><span class="petit">' + esc(cur.ratees[i].why) + '</span></li>'; }
     h += '</ul></div>';
   }
+  var dernierLog = state.log && state.log.length ? state.log[state.log.length - 1] : null;
+  if (dernierLog && dernierLog.qs && dernierLog.qs.length) { h += '<details class="ex" style="margin:12px 0"><summary>📋 Voir mes réponses</summary>' + detailExercice(dernierLog) + '</details>'; }
   h += '<button class="bouton second" id="b-ret">Retour</button>';
   h += '<button class="bouton second" id="b-acc">Accueil</button></div>';
   go(h);
@@ -861,17 +863,39 @@ function bilanTexte() {
 var LOG_MAX = 25;
 function cutTxt(t, n) { t = String(t == null ? "" : t); return t.length > n ? t.slice(0, n - 1) + "…" : t; }
 function heureNow() { var d = new Date(), mi = d.getMinutes(); return d.getHours() + " h " + (mi < 10 ? "0" + mi : mi); }
+function dateLisible(d) { var p = String(d).split("-"); if (p.length !== 3) { return d; } return p[2] + "/" + p[1] + "/" + p[0].slice(2); }
 function dateCourte(d) { var p = String(d).split("-"); return p.length === 3 ? p[2] + "/" + p[1] : d; }
 function logExercice(e) {
   if (!state.log) { state.log = []; }
   state.log.push(e);
-  if (state.log.length > LOG_MAX) { state.log = state.log.slice(state.log.length - LOG_MAX); }
+  state.log = rogneLog(state.log);
 }
+var LOG_QUIZ_MAX = 30;
+function rogneLog(arr) {
+  var q = 0, o = 0, i, keep = [];
+  for (i = arr.length - 1; i >= 0; i--) {
+    if (arr[i].k === "quiz") { if (q < LOG_QUIZ_MAX) { q++; keep.push(arr[i]); } }
+    else if (o < LOG_MAX) { o++; keep.push(arr[i]); }
+  }
+  keep.reverse();
+  return keep;
+}
+function carteQuizFaits() {
+  var lg = state.log || [], h = "", n = 0, i;
+  for (i = lg.length - 1; i >= 0; i--) {
+    if (lg[i].k !== "quiz") { continue; }
+    n++;
+    h += '<details class="ex"><summary>' + esc(dateLisible(lg[i].d)) + (lg[i].h ? " à " + esc(lg[i].h) : "") + ' · ' + lg[i].ok + '/' + lg[i].n + '</summary>' + detailExercice(lg[i]) + '</details>';
+  }
+  if (!n) { return '<details class="repli"><summary>📋 Quiz faits : questions et réponses</summary><p class="petit">Les quiz faits apparaîtront ici, avec les questions et les réponses.</p></details>'; }
+  return '<details class="repli"><summary>📋 Quiz faits : questions et réponses (' + n + ')</summary><p class="petit">Du plus récent au plus ancien. Touche un quiz pour voir chaque question et la réponse.</p>' + h + '</details>';
+}
+
 function ligneRep(x) {
   return '<div class="rep">' + (x.ok ? "✅" : "❌") + ' <b>' + esc(x.q) + '</b><br><span class="petit">Réponse de Mike : ' + esc(x.r) + (x.ok ? "" : ' · Bonne réponse : ' + esc(x.b)) + '</span></div>';
 }
 function detailExerciceTout(e) {
-  var h = '<div class="petit">' + esc(dateCourte(e.d)) + (e.h ? " à " + esc(e.h) : "") + ' · ' + e.ok + ' bonne' + (e.ok > 1 ? "s" : "") + ' réponse' + (e.ok > 1 ? "s" : "") + ' sur ' + e.n + '</div>';
+  var h = '<div class="petit">📅 ' + esc(dateLisible(e.d)) + (e.h ? " à " + esc(e.h) : "") + ' · ' + e.ok + ' bonne' + (e.ok > 1 ? "s" : "") + ' réponse' + (e.ok > 1 ? "s" : "") + ' sur ' + e.n + '</div>';
   for (var i = 0; i < (e.qs || []).length; i++) { h += ligneRep(e.qs[i]); }
   return h;
 }
@@ -884,7 +908,7 @@ function detailExercice(e, ferme) {
 function cartesJournal() {
   var lg = state.log || [], h = "", i, k;
   h += '<div class="carte"><h2>📋 Dernier exercice</h2>';
-  if (lg.length) { var d = lg[lg.length - 1]; h += '<p><b>' + esc(d.g) + '</b></p>' + detailExercice(d, true); }
+  if (lg.length) { var d = lg[lg.length - 1]; h += '<p><b>' + esc(d.g) + '</b><br>📅 ' + esc(dateLisible(d.d)) + (d.h ? ' à ' + esc(d.h) : '') + '</p>' + detailExercice(d, true); }
   else { h += '<p class="petit">Pas encore d\'exercice enregistré en détail. Le prochain apparaîtra ici.</p>'; }
   h += '</div>';
   var ex = state.history.length, nq = 0, nw = 0, jours = {}, nj = 0;
@@ -907,32 +931,33 @@ function carteDetailStats() {
   for (i = 0; i < lg.length; i++) {
     var e = lg[i], key = e.g;
     if (!agg[key]) { agg[key] = { ok: 0, n: 0, fois: 0 }; ordre.push(key); }
+    agg[key].dern = e.d;
     agg[key].ok += e.ok || 0; agg[key].n += e.n || 0; agg[key].fois++;
   }
   h += '<details class="carte repli"><summary>🧮 Détail par exercice</summary>';
   if (!ordre.length) { h += '<p class="petit">Le détail apparaîtra après le prochain exercice.</p>'; }
   for (i = ordre.length - 1; i >= 0; i--) {
     var a = agg[ordre[i]], p = a.n ? Math.round(a.ok / a.n * 100) : 0;
-    h += '<div class="rep">' + '<b>' + esc(ordre[i]) + '</b>' + '<br><span class="petit">' + a.fois + ' fois · ' + a.ok + ' bonnes réponses sur ' + a.n + ' · ' + p + ' %</span></div>';
+    h += '<div class="rep">' + '<b>' + esc(ordre[i]) + '</b>' + '<br><span class="petit">' + a.fois + ' fois · ' + a.ok + ' bonnes réponses sur ' + a.n + ' · ' + p + ' % · dernier : ' + esc(dateLisible(a.dern)) + '</span></div>';
   }
   h += '</details>';
   for (i = lg.length - 1; i >= 0 && rev.length < 15; i--) {
     for (j = (lg[i].qs || []).length - 1; j >= 0 && rev.length < 15; j--) {
       var x = lg[i].qs[j];
-      if (!x.ok && !vus[x.q]) { vus[x.q] = 1; rev.push(x); }
+      if (!x.ok && !vus[x.q]) { vus[x.q] = 1; x.dt = lg[i].d; rev.push(x); }
     }
   }
   h += '<details class="carte repli"><summary>🔁 Questions à revoir</summary>';
   if (!rev.length) { h += '<p class="petit">Aucune question ratée dans les derniers exercices. Bravo !</p>'; }
-  else { h += '<p class="petit">Les questions ratées récemment, avec la bonne réponse.</p>'; for (i = 0; i < rev.length; i++) { h += '<div class="rep">❌ ' + '<b>' + esc(rev[i].q) + '</b>' + '<br><span class="petit">Bonne réponse : ' + esc(rev[i].b) + '</span></div>'; } }
+  else { h += '<p class="petit">Les questions ratées récemment, avec la bonne réponse.</p>'; for (i = 0; i < rev.length; i++) { h += '<div class="rep">❌ ' + '<b>' + esc(rev[i].q) + '</b>' + '<br><span class="petit">Bonne réponse : ' + esc(rev[i].b) + (rev[i].dt ? ' · ' + esc(dateLisible(rev[i].dt)) : '') + '</span></div>'; } }
   return h + '</details>';
 }
 function carteJournalListe() {
-  var lg = state.log || [], h = '<details class="carte repli"><summary>🗂️ Journal des exercices</summary>';
+  var lg = (state.log || []).filter(function (x) { return x.k !== "quiz"; }), h = '<details class="carte repli"><summary>🗂️ Journal des exercices</summary>';
   if (!lg.length) { return h + '<p class="petit">Le journal se remplit à chaque exercice.</p></details>'; }
   h += '<p class="petit">Les ' + LOG_MAX + ' derniers exercices, du plus récent au plus ancien. Touche un exercice pour voir les questions et les réponses.</p>';
   for (var i = lg.length - 1; i >= 0; i--) {
-    h += '<details class="ex"><summary>' + esc(dateCourte(lg[i].d)) + ' · ' + esc(lg[i].g) + ' · ' + lg[i].ok + '/' + lg[i].n + '</summary>' + detailExercice(lg[i]) + '</details>';
+    h += '<details class="ex"><summary>' + esc(dateLisible(lg[i].d)) + ' · ' + esc(lg[i].g) + ' · ' + lg[i].ok + '/' + lg[i].n + '</summary>' + detailExercice(lg[i]) + '</details>';
   }
   return h + '</details>';
 }
@@ -948,6 +973,7 @@ function showProgression() {
   var nmMois = (state.quiz.mois === moisCle()) ? (state.quiz.nm || 0) : 0;
   h += '<p><b>🎯 Quiz du mois :</b> ' + nmMois + ' sur 30</p>';
   h += '<p><b>🔥 Quiz du jour :</b> ' + state.quiz.total + ' fait' + (state.quiz.total > 1 ? "s" : "") + ', ' + state.quiz.streak + ' jour' + (state.quiz.streak > 1 ? "s" : "") + ' de suite</p>';
+  h += carteQuizFaits();
   h += '<button class="bouton" id="b-bilan">Voir le bilan pour maman</button></div>';
   h += carteJournalListe();
   h += '<button class="bouton second" id="b-ret">Retour</button>';
