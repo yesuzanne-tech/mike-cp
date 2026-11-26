@@ -218,6 +218,33 @@ var REV_FR = { id: "rev-fr", titre: "Révisions CP : français", poids: 1, exos:
   OR("Remets les mots dans l'ordre pour faire une phrase.", ["Le", "chat", "dort."], "Le chat dort.", "🐱"),
   OR("Remets les lettres dans l'ordre de l'alphabet.", ["a", "b", "c", "d"], "a, b, c, d : c'est l'ordre de l'alphabet.", "🔤")
 ] } ] };
+/* Questions fabriquées à chaque fois avec de nouveaux nombres (doubles, soustractions, petits problèmes) */
+var dejaGen = {};
+function alea(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function choix3(r) { var o = [r, r + 1, r - 1 >= 0 ? r - 1 : r + 2]; if (r >= 3 && Math.random() < 0.5) { o[2] = r - 2; } return [String(o[0]), String(o[1]), String(o[2])]; }
+function fabrique(kind) {
+  var n, a, b, r, d, tx, em, objs, o, rep;
+  if (kind === "double") {
+    n = alea(2, 10); d = 2 * n;
+    tx = Math.random() < 0.5 ? "Quel est le double de " + n + " ?" : "Combien font " + n + " + " + n + " ? C'est le double de " + n + ".";
+    return { t: "qcm", q: tx, o: [String(d), String(d - 2), String(d + 2)], a: 0, why: "Le double de " + n + ", c'est " + n + " + " + n + " = " + d + ".", e: "✌️", fixe: false, cle: "d" + n };
+  }
+  if (kind === "sous") {
+    a = alea(4, 10); b = alea(1, a - 1); r = a - b;
+    return { t: "qcm", q: "Combien font " + a + " - " + b + " ?", o: choix3(r), a: 0, why: a + " - " + b + " = " + r + ".", e: "➖", fixe: false, cle: "s" + a + "-" + b };
+  }
+  objs = [["billes", "⚪"], ["gâteaux", "🍰"], ["ballons", "🎈"], ["crayons", "✏️"], ["bonbons", "🍬"], ["pommes", "🍎"], ["fleurs", "🌸"]];
+  o = objs[alea(0, objs.length - 1)]; a = alea(5, 10); b = alea(1, a - 1); r = a - b; rep = "";
+  for (d = 0; d < a; d++) { rep += o[1]; }
+  return { t: "qcm", q: "J'ai " + a + " " + o[0] + ". J'en donne " + b + ". Combien m'en reste-t-il ?", o: choix3(r), a: 0, why: a + " - " + b + " = " + r + ".", e: rep, fixe: false, cle: "p" + a + "-" + b + o[0] };
+}
+function G(kind) { return { t: "qcm", gen: kind, kind: kind }; }
+function genere(kind) {
+  var q, essais = 0;
+  do { q = fabrique(kind); essais++; } while (dejaGen[q.cle] && essais < 25);
+  dejaGen[q.cle] = 1;
+  return q;
+}
 var REV_MATHS = { id: "rev-maths", titre: "Révisions CP : mathématiques", poids: 1, exos: [ { titre: "Maths CP", qs: [
   Q("Combien font 2 + 3 ?", ["5", "4", "6"], 0, "2 + 3 = 5.", "🍎🍎 ➕ 🍎🍎🍎"),
   Q("Combien font 4 + 1 ?", ["5", "4", "6"], 0, "4 + 1 = 5.", "➕"),
@@ -236,6 +263,22 @@ var REV_MATHS = { id: "rev-maths", titre: "Révisions CP : mathématiques", poid
   Q("10 = 7 + ?", ["3", "2", "4"], 0, "7 + 3 = 10.", "🔟"),
   Q("Combien de côtés a un triangle ?", ["3", "4", "5"], 0, "Un triangle a 3 côtés.", "🔺"),
   Q("Combien de côtés a un carré ?", ["4", "3", "5"], 0, "Un carré a 4 côtés.", "🟦"),
+  G("double"),
+  G("double"),
+  G("double"),
+  G("double"),
+  G("double"),
+  G("double"),
+  G("sous"),
+  G("sous"),
+  G("sous"),
+  G("sous"),
+  G("sous"),
+  G("sous"),
+  G("sous"),
+  G("pb"),
+  G("pb"),
+  G("pb"),
   Q("8 est plus grand que 5.", VF, 0, "Vrai : 8 est plus grand que 5.", "🔢"),
   Q("3 + 2 = 6", VF, 1, "Faux : 3 + 2 = 5.", "➕"),
   OR("Range du plus petit au plus grand.", ["3", "7", "12", "18"], "3, 7, 12, 18 : du plus petit au plus grand.", "🔢")
@@ -249,7 +292,7 @@ var MATIERES = [
 ];
 
 /* ---------- État enregistré ---------- */
-function defaultState() { return { history: [], stats: {}, quiz: { last: "", streak: 0, total: 0 }, devoirs: {}, auto: true, maj: 0 }; }
+function defaultState() { return { history: [], stats: {}, quiz: { last: "", streak: 0, total: 0 }, types: {}, devoirs: {}, auto: true, maj: 0 }; }
 function loadState() {
   try {
     var s = window.localStorage.getItem(STORE);
@@ -259,6 +302,7 @@ function loadState() {
         if (!o.stats) { o.stats = {}; }
         if (!o.quiz) { o.quiz = { last: "", streak: 0, total: 0 }; }
         if (!o.devoirs) { o.devoirs = {}; }
+        if (!o.types) { o.types = {}; }
         if (o.auto === undefined) { o.auto = true; }
         return o;
       }
@@ -438,6 +482,21 @@ function noteReponse(lid, juste) {
   state.stats[lid].n++;
   if (!juste) { state.stats[lid].w++; }
 }
+function noteType(tk, juste) {
+  if (!state.types) { state.types = {}; }
+  if (!state.types[tk]) { state.types[tk] = { n: 0, w: 0 }; }
+  state.types[tk].n++;
+  if (!juste) { state.types[tk].w++; }
+}
+/* Taux d'erreur d'un type de question (doubles, soustractions…) ou, à défaut, de la leçon */
+function tauxType(tk, lid) { var t = state.types && state.types[tk]; if (t && t.n >= 2) { return t.w / t.n; } return tauxErreur(lid); }
+function moisCle() { return isoToday().slice(0, 7); }
+function vusMois() { var qz = state.quiz; return (qz.mois === moisCle() && qz.vus) ? qz.vus : {}; }
+function poidsIt(it) {
+  var w = 1 + 4 * tauxType(it.src.kind || it.lid, it.lid);
+  if (!it.src.gen && vusMois()[it.src.q]) { w *= 0.15; }
+  return w;
+}
 function nbEtoiles(ok, total) { var r = total ? ok / total : 0; return r >= 0.9 ? 3 : (r >= 0.6 ? 2 : 1); }
 
 /* ---------- Banque de questions ---------- */
@@ -451,7 +510,7 @@ function banque(lecs) {
 }
 /* Prépare une question pour l'affichage (mélange des choix, sauf Vrai/Faux et couleurs) */
 function prepare(it) {
-  var s = it.src, c = { t: s.t, q: s.q, why: s.why, e: s.e, lid: it.lid };
+  var s = it.src.gen ? genere(it.src.gen) : it.src, c = { t: s.t, q: s.q, why: s.why, e: s.e, lid: it.lid, tk: s.kind || it.lid };
   if (s.t === "ordre") {
     c.items = s.items.slice();
     var idx = [], k;
@@ -470,9 +529,9 @@ function prepare(it) {
 }
 function tirePondere(pool) {
   var tot = 0, k;
-  for (k = 0; k < pool.length; k++) { tot += 1 + 2 * tauxErreur(pool[k].lid); }
+  for (k = 0; k < pool.length; k++) { tot += poidsIt(pool[k]); }
   var r = Math.random() * tot, idx = pool.length - 1;
-  for (k = 0; k < pool.length; k++) { r -= 1 + 2 * tauxErreur(pool[k].lid); if (r <= 0) { idx = k; break; } }
+  for (k = 0; k < pool.length; k++) { r -= poidsIt(pool[k]); if (r <= 0) { idx = k; break; } }
   return idx;
 }
 function entrelace(arr) {
@@ -486,17 +545,35 @@ function entrelace(arr) {
 }
 /* Quiz du jour : 4 questions de français, 4 de maths, 2 d'histoire-géographie (leçons + révisions de niveau CP) */
 function construitQuiz() {
+  dejaGen = {};
   var quotas = [8, 8, 4], out = [], i;
   for (i = 0; i < MATIERES.length; i++) {
     var lecs = MATIERES[i].lecons.slice();
     if (MATIERES[i].rev) { lecs.push(MATIERES[i].rev); }
     var pool = banque(lecs), n = quotas[i];
+    if (MATIERES[i].id === "maths") {
+      /* Toujours au moins 2 doubles et 2 soustractions dans le quiz du jour */
+      var motifs = [/^double$/, /^(sous|pb)$/], m, c, trouves;
+      for (m = 0; m < motifs.length; m++) {
+        var tm = (m === 0) ? ["double"] : ["sous", "pb"], en = 0, ew = 0, zz;
+        for (zz = 0; zz < tm.length; zz++) { if (state.types && state.types[tm[zz]]) { en += state.types[tm[zz]].n; ew += state.types[tm[zz]].w; } }
+        var voulu = (en >= 3 && ew / en >= 0.4) ? 4 : 2;
+        for (c = 0; c < voulu && n > 0; c++) {
+          trouves = [];
+          for (var z = 0; z < pool.length; z++) { if (motifs[m].test(pool[z].src.kind || "")) { trouves.push(z); } }
+          if (!trouves.length) { break; }
+          var pris = trouves[Math.floor(Math.random() * trouves.length)];
+          out.push(prepare(pool[pris])); pool.splice(pris, 1); n--;
+        }
+      }
+    }
     while (n > 0 && pool.length > 0) { var k = tirePondere(pool); out.push(prepare(pool[k])); pool.splice(k, 1); n--; }
   }
   return entrelace(out);
 }
 /* Exercice express : autant de questions de chaque leçon, avec au moins un « dans l'ordre » de chaque */
 function construitExpress(lecs, nbParLecon) {
+  dejaGen = {};
   var out = [], i, k;
   for (i = 0; i < lecs.length; i++) {
     var pool = banque([lecs[i]]), ordres = [], autres = [];
@@ -510,6 +587,7 @@ function construitExpress(lecs, nbParLecon) {
   return entrelace(out);
 }
 function construitExo(l, e) {
+  dejaGen = {};
   var out = [], qs = l.exos[e].qs;
   for (var k = 0; k < qs.length; k++) { out.push(prepare({ lid: l.id, src: qs[k] })); }
   return melangeTab(out);
@@ -679,7 +757,7 @@ function showQuestionOrdreReset() {
 function termineQuestion(juste, texteJuste) {
   var q = cur.qs[cur.qi];
   cur.figee = true;
-  noteReponse(q.lid, juste);
+  noteReponse(q.lid, juste); noteType(q.tk || q.lid, juste);
   if (juste) { cur.ok++; } else { cur.ratees.push(q); }
   if (!cur.rl) { cur.rl = []; }
   cur.rl.push({ q: cutTxt(q.q, 140), r: cutTxt(cur.repTxt, 90), b: cutTxt(cur.bonTxt, 90), ok: juste ? 1 : 0 });
@@ -732,7 +810,11 @@ function showFin() {
   state.history.push({ d: isoToday(), k: cur.kind, g: cur.label, s: Math.round(ok / n * 10), ok: ok, n: n });
   if (state.history.length > 300) { state.history = state.history.slice(state.history.length - 300); }
   if (cur.kind === "quiz") {
-    var qz = state.quiz, auj = isoToday();
+    var qz = state.quiz, auj = isoToday(), qi;
+    if (qz.mois !== moisCle()) { qz.mois = moisCle(); qz.nm = 0; qz.vus = {}; }
+    qz.nm = (qz.nm || 0) + 1;
+    for (qi = 0; qi < cur.qs.length; qi++) { qz.vus[cur.qs[qi].q] = 1; }
+    if (Object.keys(qz.vus).length > 600) { qz.vus = {}; }
     if (qz.last !== auj) { qz.streak = (qz.last === isoHier()) ? qz.streak + 1 : 1; qz.total++; qz.last = auj; }
   }
   state.enc = null;
@@ -863,6 +945,8 @@ function showProgression() {
     h += s ? ('<span class="petit">' + Math.round(s.p * 100) + ' % de bonnes réponses · ' + s.n + ' questions</span>' + barre(s.p)) : '<span class="petit">Pas encore travaillée</span>';
     h += '</div>';
   }
+  var nmMois = (state.quiz.mois === moisCle()) ? (state.quiz.nm || 0) : 0;
+  h += '<p><b>🎯 Quiz du mois :</b> ' + nmMois + ' sur 30</p>';
   h += '<p><b>🔥 Quiz du jour :</b> ' + state.quiz.total + ' fait' + (state.quiz.total > 1 ? "s" : "") + ', ' + state.quiz.streak + ' jour' + (state.quiz.streak > 1 ? "s" : "") + ' de suite</p>';
   h += '<button class="bouton" id="b-bilan">Voir le bilan pour maman</button></div>';
   h += carteJournalListe();
