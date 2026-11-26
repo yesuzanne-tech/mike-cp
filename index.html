@@ -615,6 +615,7 @@ document.getElementById("b-maj").addEventListener("click", function () {
 });
 
 function showHome() {
+  devRetour = null;
   var h = '<div class="carte"><h2>Salut Mike ! 👋</h2><p>Nous sommes ' + dateLongue() + '. Choisis ce que tu veux faire.</p></div>';
 
   var auj = isoToday(), i;
@@ -632,6 +633,8 @@ function showHome() {
     h += '<div class="carte"><h2>Exercice commencé</h2><p>' + esc(enc.label) + ' : ' + (enc.qi >= enc.qs.length ? 'terminé, touche pour voir ton résultat.' : 'tu t\'étais arrêté à la question ' + (enc.qi + 1) + ' sur ' + enc.qs.length + '.') + '</p><button class="bouton orange" id="b-reprise">Reprendre</button></div>';
   }
 
+  var devOn = devActifs().length > 0;
+  h += '<div class="carte"><h2>Devoirs de la maîtresse 📝</h2><p>' + (devOn ? 'Les leçons à apprendre et les mini-quiz pour l\'école.' : 'Pas de devoir pour le moment.') + '</p><button class="bouton orange" id="b-dev"' + (devOn ? '' : ' disabled style="opacity:.4"') + '>Voir mes devoirs</button></div>';
   h += '<div class="carte"><h2>Mes leçons 📚</h2>';
   for (i = 0; i < MATIERES.length; i++) { h += '<button class="option" id="m' + i + '">' + MATIERES[i].emoji + ' ' + esc(MATIERES[i].nom) + '</button>'; }
   h += '</div>';
@@ -641,12 +644,102 @@ function showHome() {
 
   bind("b-reprise", function () { reprendre(); });
   bind("b-quiz", function () { lancer("quiz", "Quiz du jour", construitQuiz(), mkCtx("home")); });
+  bind("b-dev", showDevoirs);
   bind("b-prog", showProgression);
   for (var k = 0; k < MATIERES.length; k++) { (function (n) { bind("m" + n, function () { showMatiere(n); }); })(k); }
 }
 
+
+/* ---------- Devoirs de la maîtresse ---------- */
+/* Pour ajouter un devoir : une ligne dans DEVOIRS { id, date: "AAAA-MM-JJ" (jour pour lequel il est donné), titre, lecons: [ids] }.
+   Le module n'est actif que jusqu'à cette date incluse ; sans devoir actif, le bouton est grisé. */
+var DEVOIRS = [];
+var NB_DEV_SERIES = 5, NB_DEV_Q = 10, devRetour = null;
+function devActif(d) { return !!d.date && d.date >= isoToday(); }
+function devActifs() { var r = []; for (var i = 0; i < DEVOIRS.length; i++) { if (devActif(DEVOIRS[i])) { r.push(DEVOIRS[i]); } } return r; }
+function devParId(id) { for (var i = 0; i < DEVOIRS.length; i++) { if (DEVOIRS[i].id === id) { return DEVOIRS[i]; } } return null; }
+function leconDev(lid) {
+  for (var i = 0; i < MATIERES.length; i++) { for (var j = 0; j < MATIERES[i].lecons.length; j++) { if (MATIERES[i].lecons[j].id === lid) { return { mi: i, li: j, l: MATIERES[i].lecons[j] }; } } }
+  return null;
+}
+function devScores(id) { if (!state.devoirs) { state.devoirs = {}; } if (!state.devoirs[id]) { state.devoirs[id] = {}; } return state.devoirs[id]; }
+function devFaits(d) { var sc = devScores(d.id), n = 0; for (var k = 0; k < NB_DEV_SERIES; k++) { if (sc[k] !== undefined) { n++; } } return n; }
+function rngSeed(str) {
+  var h = 7;
+  for (var i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) % 2147483647; }
+  return function () { h = (h * 48271) % 2147483647; return h / 2147483647; };
+}
+function melangeSeed(arr, rnd) {
+  var a = arr.slice(), i, j, t;
+  for (i = a.length - 1; i > 0; i--) { j = Math.floor(rnd() * (i + 1)); t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+function devPool(d) {
+  var rnd = rngSeed(d.id), listes = [], i, k;
+  for (i = 0; i < d.lecons.length; i++) {
+    var x = leconDev(d.lecons[i]);
+    if (x) { listes.push(melangeSeed(banque([x.l]), rnd)); }
+  }
+  var pool = [], reste = true;
+  for (k = 0; reste; k++) {
+    reste = false;
+    for (i = 0; i < listes.length; i++) { if (k < listes[i].length) { pool.push(listes[i][k]); reste = true; } }
+  }
+  return pool;
+}
+function buildDevQuiz(d, serie) {
+  var pool = devPool(d), out = [], n = pool.length, nb = Math.min(NB_DEV_Q, n), i;
+  for (i = 0; i < nb; i++) { out.push(prepare(pool[(serie * NB_DEV_Q + i) % n])); }
+  return melangeTab(out);
+}
+function showDevoirs() {
+  devRetour = null;
+  var h = '<div class="carte"><h2>Devoirs de la maîtresse 📝</h2><p>Les leçons à apprendre pour l\'école. Lis la leçon, fais les exercices, puis passe les 5 mini-quiz de 10 questions.</p></div>';
+  if (!devActifs().length) { h += '<div class="carte"><p>Aucun devoir pour le moment.</p></div>'; }
+  for (var i = DEVOIRS.length - 1; i >= 0; i--) {
+    var d = DEVOIRS[i];
+    if (!devActif(d)) { continue; }
+    h += '<button class="option" id="dv' + i + '">' + esc(d.titre) + (d.date ? ' · ' + esc(dateLisible(d.date)) : '') + '<br><span class="petit">Mini-quiz faits : ' + devFaits(d) + ' / ' + NB_DEV_SERIES + '</span></button>';
+  }
+  h += '<button class="bouton second" id="b-ret">Retour</button>';
+  go(h);
+  bind("b-ret", showHome);
+  for (var k = 0; k < DEVOIRS.length; k++) { (function (n) { bind("dv" + n, function () { showDevoir(DEVOIRS[n].id); }); })(k); }
+}
+function showDevoir(id) {
+  var d = devParId(id), sc = devScores(id), i, k;
+  if (!d) { showDevoirs(); return; }
+  devRetour = id;
+  var h = '<div class="carte"><h2>' + esc(d.titre) + '</h2>' + (d.date ? '<p class="petit">' + esc(dateLisible(d.date)) + '</p>' : '') + '<p><b>1. Les leçons à voir</b></p>';
+  for (i = 0; i < d.lecons.length; i++) {
+    var x = leconDev(d.lecons[i]);
+    if (x) { h += '<div class="rang"><b>' + x.l.emoji + ' ' + esc(x.l.titre) + '</b><div class="duo"><button class="bouton second" id="dl' + i + '">Leçon</button><button class="bouton orange" id="de' + i + '">Exercices</button></div></div>'; }
+  }
+  h += '</div><div class="carte"><p><b>2. Les mini-quiz</b></p><p class="petit">Chaque mini-quiz a 10 questions différentes.</p>';
+  for (k = 0; k < NB_DEV_SERIES; k++) {
+    var v = sc[k];
+    h += '<button class="option" id="dq' + k + '">Mini-quiz ' + (k + 1) + (v !== undefined ? ' · meilleur score ' + v + ' / ' + NB_DEV_Q + (v >= 9 ? ' ⭐' : '') : '') + '</button>';
+  }
+  h += '</div><button class="bouton second" id="b-ret">Retour</button>';
+  go(h);
+  bind("b-ret", showDevoirs);
+  for (i = 0; i < d.lecons.length; i++) {
+    (function (n) {
+      var x = leconDev(d.lecons[n]);
+      if (x) { bind("dl" + n, function () { showLecon(x.mi, x.li); }); bind("de" + n, function () { showExos(x.mi, x.li); }); }
+    })(i);
+  }
+  for (k = 0; k < NB_DEV_SERIES; k++) { (function (n) { bind("dq" + n, function () { lancerDevQuiz(id, n); }); })(k); }
+}
+function lancerDevQuiz(id, serie) {
+  var d = devParId(id), qs = d ? buildDevQuiz(d, serie) : [];
+  if (!qs.length) { showDevoir(id); return; }
+  lancer("devquiz", d.titre + " : mini-quiz " + (serie + 1), qs, mkCtx("dev", id, serie));
+}
+
 /* ---------- Matières et leçons ---------- */
 function showMatiere(mi) {
+  devRetour = null;
   var m = MATIERES[mi], h = '<div class="carte"><h2>' + m.emoji + ' ' + esc(m.nom) + '</h2>';
   if (!m.lecons.length) { h += '<p>Les leçons arrivent bientôt. On les ajoute au fur et à mesure !</p>'; }
   if (m.id === "histoire") { h += '<div class="carte express" style="margin-top:10px"><b>⭐ Exercice express : H1 et H2</b><button class="bouton orange" id="b-express">C\'est parti !</button></div>'; }
@@ -678,7 +771,7 @@ function showLecon(mi, li) {
   go(h);
   bind("b-ecoute", function () { parler("Leçon. " + l.titre.replace("·", ":") + ". " + l.retenir.join(" ")); });
   bind("b-go", function () { stopVoix(); showExos(mi, li); });
-  bind("b-ret", function () { stopVoix(); showMatiere(mi); });
+  bind("b-ret", function () { stopVoix(); if (devRetour) { showDevoir(devRetour); } else { showMatiere(mi); } });
 }
 function showExos(mi, li) {
   var l = MATIERES[mi].lecons[li], i;
@@ -691,13 +784,13 @@ function showExos(mi, li) {
     (function (n) { bind("x" + n, function () { lancer("exo", l.titre + " : " + l.exos[n].titre, construitExo(l, n), mkCtx("exos", mi, li)); }); })(i);
   }
   bind("x-tout", function () { lancer("exo", l.titre + " : mélange", construitExpress([l], 8), mkCtx("exos", mi, li)); });
-  bind("b-ret", function () { showMatiere(mi); });
+  bind("b-ret", function () { if (devRetour) { showDevoir(devRetour); } else { showMatiere(mi); } });
 }
 
 /* ---------- Déroulement d'une série de questions ---------- */
 function mkCtx(r, mi, li) {
   return { r: r, mi: mi, li: li, retour: function () {
-    if (r === "mat") { showMatiere(mi); } else if (r === "exos") { showExos(mi, li); } else { showHome(); }
+    if (r === "mat") { showMatiere(mi); } else if (r === "exos") { showExos(mi, li); } else if (r === "dev") { showDevoir(mi); } else { showHome(); }
   } };
 }
 /* Enregistre où en est la série, pour pouvoir reprendre là où Mike s'est arrêté */
@@ -809,6 +902,7 @@ function showFin() {
   logExercice({ id: new Date().getTime(), d: isoToday(), h: heureNow(), k: cur.kind, g: cur.label, ok: ok, n: n, qs: cur.rl || [] });
   state.history.push({ d: isoToday(), k: cur.kind, g: cur.label, s: Math.round(ok / n * 10), ok: ok, n: n });
   if (state.history.length > 300) { state.history = state.history.slice(state.history.length - 300); }
+  if (cur.kind === "devquiz") { var dvs = devScores(cur.ctx.mi); if (dvs[cur.ctx.li] === undefined || ok > dvs[cur.ctx.li]) { dvs[cur.ctx.li] = ok; } }
   if (cur.kind === "quiz") {
     var qz = state.quiz, auj = isoToday(), qi;
     if (qz.mois !== moisCle()) { qz.mois = moisCle(); qz.nm = 0; qz.vus = {}; }
